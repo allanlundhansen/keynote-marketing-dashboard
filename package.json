@@ -1,0 +1,17 @@
+{
+  "name": "keynote-marketing-dashboard",
+  "version": "1.0.0",
+  "description": "Marketing analytics dashboard for keynote business",
+  "scripts": {
+    "login": "clasp login",
+    "create": "clasp create --type webapp --title 'Marketing Dashboard' --rootDir ./src",
+    "clone": "clasp clone",
+    "push": "clasp push",
+    "pull": "clasp pull",
+    "deploy": "clasp deploy",
+    "open": "clasp open"
+  },
+  "dependencies": {
+    "@google/clasp": "^2.4.2"
+  }
+}

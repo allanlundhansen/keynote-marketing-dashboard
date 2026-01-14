@@ -12,7 +12,7 @@
 
 const CONFIG = {
   // Open your dashboard Google Sheet and copy value between /d/ and /edit
-  SPREADSHEET_ID: 'INSERT_SPREADSHEET_ID_HERE', 
+  SPREADSHEET_ID: '1-JSj1Ky2WJU0ebMmHX-8H8sqzby6b06DTojB8kuzgRI', 
   SHEET_NAME: 'Raw_Ads_Data'
 };
 
@@ -22,7 +22,7 @@ function main() {
   // 1. Get Yesterday's Data
   const query = `
     SELECT 
-      request_date,
+      segments.date,
       campaign.id, 
       campaign.name, 
       metrics.cost_micros, 
@@ -67,7 +67,7 @@ function writeToSheet(newRows) {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   
   // Ensure sheet exists
-  let sheet = ss.getSheetByName(CONFIG.SHEETS_NAME);
+  let sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(CONFIG.SHEET_NAME);
     // Add Header if new

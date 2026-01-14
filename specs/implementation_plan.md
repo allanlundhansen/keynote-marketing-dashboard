@@ -18,22 +18,21 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 ### Data Flow
 
 ```
-┌─────────────────────┐         ┌──────────────────┐
-│  Google Ads Script  │────────→│  Raw_Ads_Data    │
-│  (runs IN account)  │  Push   │     Sheet        │
-└─────────────────────┘ Daily   └────────┬─────────┘
-                                         │
-                                         ▼
-┌─────────────────────┐         ┌──────────────────┐
-│  GA4 Data API       │────────→│  Apps Script     │──→ Web App Dashboard
-│  (direct access)    │  Pull   │  Backend         │
-└─────────────────────┘         └────────┬─────────┘
-                                         │
-                                         ▼
-                                ┌──────────────────┐
-                                │  Raw_GA4_Data    │
-                                │     Sheet        │
-                                └──────────────────┘
+┌─────────────────────┐         ┌──────────────────────────┐
+│  Google Ads Script  │────────→│  Google Sheets           │
+│  (runs IN account)  │  Push   │  ├─ Raw_Ads_Campaigns    │
+│                     │  Daily  │  ├─ Raw_Ads_AdGroups     │
+└─────────────────────┘         │  ├─ Raw_Ads_Keywords     │
+                                │  └─ Raw_Ads_SearchTerms  │
+┌─────────────────────┐         │                          │
+│  GA4 Data API       │────────→│  └─ Raw_GA4_Data         │
+│  (direct access)    │  Pull   └────────────┬─────────────┘
+└─────────────────────┘                      │
+                                             ▼
+                                ┌──────────────────────────┐
+                                │  Apps Script Web App     │
+                                │  Dashboard               │
+                                └──────────────────────────┘
 ```
 
 ### Hybrid Data Ingestion Model
@@ -80,7 +79,8 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 │   ├── AnalyticsService.js       # GA4 API integration
 │   ├── SheetManager.js           # Sheet CRUD operations
 │   ├── Test.js                   # API connection verification
-│   ├── AdsScript_Internal.js     # Standalone script for Google Ads account
+│   ├── AdsScript_Internal.js     # Daily export script for Google Ads account
+│   ├── AdsScript_Backfill.js     # One-time historical data export (to be created)
 │   └── index.html                # Dashboard frontend
 ├── specs/                        # Specification documentation
 │   ├── implementation_plan.md    # This file (high-level roadmap)
@@ -99,8 +99,11 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 
 | Sheet | Purpose | Population Method |
 |-------|---------|-------------------|
-| `Raw_Ads_Data` | Daily Google Ads metrics | Google Ads internal script (daily push) |
-| `Raw_GA4_Data` | Daily GA4 metrics | Apps Script (on-demand pull) |
+| `Raw_Ads_Campaigns` | Campaign-level daily metrics | Google Ads script (daily push) |
+| `Raw_Ads_AdGroups` | Ad Group-level daily metrics | Google Ads script (daily push) |
+| `Raw_Ads_Keywords` | Keyword-level daily metrics | Google Ads script (daily push) |
+| `Raw_Ads_SearchTerms` | Search term daily metrics | Google Ads script (daily push) |
+| `Raw_GA4_Data` | Daily GA4 session metrics | Apps Script (on-demand pull) |
 | `System_Logs` | Error/debug logging | Apps Script |
 
 ---
@@ -111,15 +114,23 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 
 **Status**: 🟡 In Progress
 
-**Goal**: Establish core infrastructure and verify data pipelines work.
+**Goal**: Establish core infrastructure with full data granularity (Campaign → Ad Group → Keyword → Search Term) and verify data pipelines work.
 
 | Component | Status |
 |-----------|--------|
-| Google Ads internal script | ✅ Complete |
 | GA4 API integration | ✅ Verified |
-| Sheet data storage | ✅ Complete |
+| Basic Ads script (proof of concept) | ✅ Tested |
+| Expanded Ads script (4 data levels) | 🟡 In Progress |
+| Historical backfill script | ⏳ Pending |
+| Sheet data storage (6 sheets) | ⏳ Pending |
 | Basic dashboard UI | 🟡 Skeleton built |
 | Web App deployment | ⏳ Pending |
+
+**Data Granularity** (4 levels):
+- Campaign: Strategic overview, budget allocation
+- Ad Group: Tactical analysis, messaging performance
+- Keyword: Bid optimization, quality score tracking
+- Search Term: Intent analysis, negative keyword discovery
 
 **Detailed specs**: See `specs/phase_1_foundation/`
 

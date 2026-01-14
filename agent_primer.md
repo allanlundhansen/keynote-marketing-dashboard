@@ -16,6 +16,17 @@ To be extra clear on the work flow principles I am just going to highlight them 
 6. ✅ ALWAYS, when making new or updated decisions that are not yet in any of the ADRs or in the Spec, update the documentation to reflect the changes.
 7. ✅ I am NOT interested in patchy workaround proposals, Either we can create a good solution or we think of something else, no lazy workarounds just to check off a task
 
+## Planning & Specification Standards
+
+Before implementing any phase, we **MUST** create a dedicated folder in `specs/[Phase_Name]/` containing exactly these four documents:
+
+1.  **design.md**: Technical design, architecture diagrams, data flow, and UI mockups.
+2.  **requirements.md**: Functional/non-functional requirements, user stories, and acceptance criteria.
+3.  **tasks.md**: Granular, checklist-style breakdown of work items for this phase.
+4.  **ADR.md**: Architecture Decision Records explaining the "why" behind key technical choices.
+
+We do not start coding a phase until these four documents are created, reviewed, and approved.
+
 Please remember to do one task at a time from the spec, and every time one task is done we check in with each other to agree it is done. If you need to tackle multiple tasks at once lay out your plan first and we go through it together. After you deem a task done, you write to me how to test it, if it is an interface testable implementation, otherwise maybe suggest an alternative way to test it if it is not.
 
 And one last very important point: Please correct me when I you believe I am wrong I much prefer honesty, and back and forth conversation if you believe you have a better approach to agree on things rather than you just agreeing with me on everything.

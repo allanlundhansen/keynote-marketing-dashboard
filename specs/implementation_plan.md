@@ -7,9 +7,10 @@ A custom Google Apps Script + Sheets solution to analyze marketing spend, campai
 As a keynote speaker running Google Ads campaigns, the need is to:
 
 - Understand if campaigns are underperforming vs. external factors (seasonality, economy)
-- Compare current performance against historical data (YoY)
+- Compare current performance against historical data (YoY, MoM)
 - Analyze the full funnel: Ads → Landing Page → Booking Inquiry
 - Have a clean, customizable view without the noise of native interfaces
+- Get fast dashboard load times (< 2 seconds)
 
 ---
 
@@ -18,21 +19,48 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 ### Data Flow
 
 ```
-┌─────────────────────┐         ┌──────────────────────────┐
-│  Google Ads Script  │────────→│  Google Sheets           │
-│  (runs IN account)  │  Push   │  ├─ Raw_Ads_Campaigns    │
-│                     │  Daily  │  ├─ Raw_Ads_AdGroups     │
-└─────────────────────┘         │  ├─ Raw_Ads_Keywords     │
-                                │  └─ Raw_Ads_SearchTerms  │
-┌─────────────────────┐         │                          │
-│  GA4 Data API       │────────→│  └─ Raw_GA4_Data         │
-│  (direct access)    │  Pull   └────────────┬─────────────┘
-└─────────────────────┘                      │
-                                             ▼
-                                ┌──────────────────────────┐
-                                │  Apps Script Web App     │
-                                │  Dashboard               │
-                                └──────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DATA INGESTION (Daily)                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────┐              ┌──────────────────────────────────┐  │
+│  │  Google Ads Script  │─────────────→│  RAW DATA SHEETS                 │  │
+│  │  (runs IN account)  │    Push      │  ├─ Raw_Ads_Daily                │  │
+│  │  @ 3 AM daily       │    Daily     │  ├─ Raw_Ads_Keywords             │  │
+│  └─────────────────────┘              │  ├─ Raw_Ads_SearchTerms          │  │
+│                                       │  └─ Raw_Ads_Geographic           │  │
+│  ┌─────────────────────┐              │                                  │  │
+│  │  GA4 Data API       │─────────────→│  └─ Raw_GA4_Daily                │  │
+│  │  (Apps Script)      │    Pull      └──────────────────────────────────┘  │
+│  │  @ 4 AM daily       │    Daily                    │                      │
+│  └─────────────────────┘                             │                      │
+│                                                      ▼                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                                       │
+                                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        NIGHTLY AGGREGATION (@ 5 AM)                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────┐              ┌──────────────────────────────────┐  │
+│  │  Apps Script        │─────────────→│  SUMMARY SHEETS                  │  │
+│  │  Aggregation Job    │   Compute    │  ├─ Summary_Monthly              │  │
+│  │                     │              │  └─ Summary_Campaigns            │  │
+│  └─────────────────────┘              └──────────────────────────────────┘  │
+│                                                      │                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                                       │
+                                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                             PRESENTATION                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────┐              ┌──────────────────────────────────┐  │
+│  │  User via Browser   │◄────────────→│  Apps Script Web App             │  │
+│  │                     │    HTML      │  (reads from Summary sheets)     │  │
+│  └─────────────────────┘              └──────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Hybrid Data Ingestion Model
@@ -43,6 +71,13 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 | **GA4** | Pull (direct API) | Analytics API is readily accessible |
 
 > **Note**: Once Google Ads API access is approved, the system can optionally switch to direct API calls. The hybrid model will continue to work as a fallback.
+
+### Two-Tier Data Model
+
+| Tier | Sheets | Purpose | Read By |
+|------|--------|---------|---------|
+| **Raw Data** | Raw_Ads_Daily, Raw_Ads_Keywords, Raw_Ads_SearchTerms, Raw_Ads_Geographic, Raw_GA4_Daily | Source of truth, audit trail | Nightly aggregation, drill-down queries |
+| **Summary Data** | Summary_Monthly, Summary_Campaigns | Fast dashboard queries | Dashboard (< 2 sec load) |
 
 ### Tech Stack
 
@@ -60,10 +95,10 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | **Platform** | Google Apps Script | Free, native Google API access, no infrastructure |
-| **Database** | Google Sheets | Inspectable, no cost, sufficient for daily aggregates |
+| **Database** | Google Sheets (two-tier) | Inspectable, no cost, raw + summary for speed |
 | **UI** | Apps Script Web App | Custom HTML/CSS/JS, no external hosting needed |
 | **Ads Data** | Hybrid (internal script) | Bypasses API approval requirement |
-| **Rendering** | Client-side fetch | Fast first paint, async data loading |
+| **Rendering** | Client-side fetch from summaries | Fast first paint, < 2 sec load |
 | **Historical Data** | Up to 7 years | Daily aggregates fit within Sheets limits |
 
 ---
@@ -75,12 +110,13 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 ├── src/                          # Apps Script source files
 │   ├── Code.js                   # Main entry point (doGet, refreshData)
 │   ├── Config.js                 # Centralized configuration
-│   ├── AdsService.js             # Reads Ads data from Sheets
+│   ├── AdsService.js             # Reads Ads data from Summary sheets
 │   ├── AnalyticsService.js       # GA4 API integration
+│   ├── AggregationService.js     # Nightly aggregation job
 │   ├── SheetManager.js           # Sheet CRUD operations
 │   ├── Test.js                   # API connection verification
 │   ├── AdsScript_Internal.js     # Daily export script for Google Ads account
-│   ├── AdsScript_Backfill.js     # One-time historical data export (to be created)
+│   ├── AdsScript_Backfill.js     # One-time historical data export
 │   └── index.html                # Dashboard frontend
 ├── specs/                        # Specification documentation
 │   ├── implementation_plan.md    # This file (high-level roadmap)
@@ -95,16 +131,24 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 └── README.md                     # Quick setup guide
 ```
 
-### Sheets Structure
+### Multi-Spreadsheet Structure
 
-| Sheet | Purpose | Population Method |
-|-------|---------|-------------------|
-| `Raw_Ads_Campaigns` | Campaign-level daily metrics | Google Ads script (daily push) |
-| `Raw_Ads_AdGroups` | Ad Group-level daily metrics | Google Ads script (daily push) |
-| `Raw_Ads_Keywords` | Keyword-level daily metrics | Google Ads script (daily push) |
-| `Raw_Ads_SearchTerms` | Search term daily metrics | Google Ads script (daily push) |
-| `Raw_GA4_Data` | Daily GA4 session metrics | Apps Script (on-demand pull) |
-| `System_Logs` | Error/debug logging | Apps Script |
+Due to Google Sheets' 10M cell limit, each raw data type is stored in its own spreadsheet. See `specs/spreadsheet_config.md` for all IDs.
+
+| Spreadsheet | Sheet(s) | Type | Purpose | Population Method |
+|-------------|----------|------|---------|-------------------|
+| Raw_Ads_Daily | `Raw_Ads_Daily` | Raw | Campaign metrics by Date × Device × NetworkType | Google Ads script (daily push) |
+| Raw_Ads_Keywords | `Raw_Ads_Keywords` | Raw | Keyword-level metrics with QualityScore | Google Ads script (daily push) |
+| Raw_Ads_SearchTerms | `Raw_Ads_SearchTerms` | Raw | Search term data for intent analysis | Google Ads script (daily push) |
+| Raw_Ads_Geographic | `Raw_Ads_Geographic` | Raw | Campaign metrics by Date × CountryCriterionId | Google Ads script (daily push) |
+| Raw_GA4_Daily | `Raw_GA4_Daily` | Raw | GA4 metrics by Campaign × Device × Country | Apps Script (daily pull) |
+| Dashboard | `Summary_Monthly` | Summary | Monthly aggregates (Ads + GA4 joined) | Apps Script (nightly) |
+| Dashboard | `Summary_Campaigns` | Summary | Campaign totals for quick reference | Apps Script (nightly) |
+| Dashboard | `System_Logs` | System | Error/debug logging | Apps Script |
+
+**Notes:**
+- `Raw_Ads_Daily` and `Raw_Ads_Geographic` use separate queries due to Google Ads API segment restrictions
+- Geographic data uses `geographic_view` resource returning criterion IDs (not country names)
 
 ---
 
@@ -114,23 +158,28 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 
 **Status**: 🟡 In Progress
 
-**Goal**: Establish core infrastructure with full data granularity (Campaign → Ad Group → Keyword → Search Term) and verify data pipelines work.
+**Goal**: Establish core infrastructure with two-tier data model (raw + summary) and verify data pipelines work with fast dashboard performance.
 
 | Component | Status |
 |-----------|--------|
 | GA4 API integration | ✅ Verified |
 | Basic Ads script (proof of concept) | ✅ Tested |
-| Expanded Ads script (4 data levels) | 🟡 In Progress |
-| Historical backfill script | ⏳ Pending |
-| Sheet data storage (6 sheets) | ⏳ Pending |
+| Updated Ads script (new data model) | 🟡 In Progress |
+| Historical backfill script | 🟡 In Progress |
+| Raw data sheets (4 sheets) | ⏳ Pending |
+| Summary sheets (2 sheets) | ⏳ Pending |
+| Nightly aggregation job | ⏳ Pending |
 | Basic dashboard UI | 🟡 Skeleton built |
 | Web App deployment | ⏳ Pending |
 
-**Data Granularity** (4 levels):
-- Campaign: Strategic overview, budget allocation
-- Ad Group: Tactical analysis, messaging performance
-- Keyword: Bid optimization, quality score tracking
-- Search Term: Intent analysis, negative keyword discovery
+**Data Model**:
+- **Raw_Ads_Daily**: Campaign × Device × NetworkType (daily metrics)
+- **Raw_Ads_Keywords**: Keyword-level with QualityScore
+- **Raw_Ads_SearchTerms**: Search term detail
+- **Raw_Ads_Geographic**: Campaign × Country (separate due to API segment restrictions)
+- **Raw_GA4_Daily**: Sessions by Campaign × Device × Country
+- **Summary_Monthly**: Pre-aggregated for fast dashboard (Ads + GA4 joined)
+- **Summary_Campaigns**: Campaign totals
 
 **Detailed specs**: See `specs/phase_1_foundation/`
 
@@ -160,7 +209,7 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 
 **Planned Features**:
 - Date range selector (custom periods)
-- YoY metric calculations
+- YoY metric calculations (built into Summary_Monthly)
 - Trend charts (weekly/monthly)
 - Anomaly detection and highlighting
 
@@ -192,14 +241,28 @@ Each phase includes specific acceptance criteria in its `requirements.md`. Gener
 
 1. **API Connection Tests**: Run `Test.js` functions to verify connectivity
 2. **Data Accuracy**: Spot-check values against native Google interfaces
-3. **Dashboard Review**: Visual inspection of rendered metrics
-4. **User Sign-off**: Explicit agreement before marking phase complete
+3. **Summary Verification**: Confirm Summary totals match Raw totals
+4. **Performance**: Verify dashboard loads < 2 seconds
+5. **User Sign-off**: Explicit agreement before marking phase complete
 
 ### Built-in Resilience
 
 - Mock data fallbacks when APIs are unavailable
 - Error logging to `System_Logs` sheet and Apps Script execution transcript
-- Data freshness indicators on dashboard
+- Data freshness indicators on dashboard ("Data as of: ...")
+
+---
+
+## Known Limitations
+
+| Limitation | Impact | Mitigation |
+|------------|--------|------------|
+| Google Sheets 10M cell limit | Single spreadsheet cannot hold 7 years of all data types | Multi-spreadsheet architecture (one per data type); see `specs/spreadsheet_config.md` |
+| Google Ads API segment restrictions | Cannot combine geo segments with device/network segments; `segments.geo_target_country` not compatible with `campaign` resource | Use `geographic_view` resource; store criterion IDs; resolve names in dashboard |
+| GA4 has no NetworkType dimension | Cannot calculate CostPerSession at SEARCH vs DISPLAY level | Document in dashboard; analyze at Campaign × Device level |
+| Keyword/SearchTerm data retention | Only ~2-3 years available from Google | Backfill what's available; older data has campaign-level only |
+| Apps Script execution limits | 30 min max for scheduled scripts | Chunk backfill by year; nightly aggregation is fast |
+| Dashboard data staleness | Up to 24 hours old | Acceptable for daily metrics; show "as of" timestamp |
 
 ---
 
@@ -214,5 +277,5 @@ Each phase includes specific acceptance criteria in its `requirements.md`. Gener
 ## Links
 
 - **Repository**: [GitHub](https://github.com/allanlundhansen/keynote-marketing-dashboard)
-- **Google Sheet**: `1-JSj1Ky2WJU0ebMmHX-8H8sqzby6b06DTojB8kuzgRI`
+- **Spreadsheet Config**: See `specs/spreadsheet_config.md` for all spreadsheet IDs
 - **Apps Script Project**: See `.clasp.json` for script ID

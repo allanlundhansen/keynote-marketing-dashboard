@@ -6,87 +6,126 @@
 - [x] Create centralized `Config.js`
 - [x] Configure OAuth scopes in `appsscript.json`
 - [x] Validate GA4 API access with real credentials
-- [ ] Update `Config.js` with new sheet names (4 Ads sheets)
+- [ ] Update `Config.js` with new sheet names (raw + summary sheets)
 
 ## Google Ads Internal Scripts
 
 ### Daily Export Script (`AdsScript_Internal.js`)
 
 - [x] Basic script structure with config
-- [ ] Expand to export Campaign-level data with all metrics
-- [ ] Add Ad Group-level query and export
-- [ ] Add Keyword-level query and export
-- [ ] Add Search Term-level query and export
-- [ ] Ensure sheets are created with headers if missing
-- [ ] Test with Preview in Google Ads
-- [ ] Deploy and schedule for daily run (3 AM)
+- [x] Export to `Raw_Ads_Daily` (Date × Campaign × Device × NetworkType)
+- [x] Export to `Raw_Ads_Keywords` (Keyword-level with Device, NetworkType)
+- [x] Export to `Raw_Ads_SearchTerms` (Search term with Device)
+- [x] Export to `Raw_Ads_Geographic` (Date × Campaign × CountryCriterionId via `geographic_view`)
+- [x] Ensure sheets are created with headers if missing
+- [x] Test with Preview in Google Ads
+- [x] Deploy and schedule for daily run (3 AM)
+
+**Note:** Device/NetworkType and Country require separate queries due to Google Ads API segment restrictions. Geographic uses `geographic_view` resource which returns criterion IDs.
 
 ### Historical Backfill Script (`AdsScript_Backfill.js`)
 
-- [ ] Create backfill script with configurable date range
-- [ ] Implement Campaign backfill (2+ years)
-- [ ] Implement Ad Group backfill
-- [ ] Implement Keyword backfill
-- [ ] Implement Search Term backfill
-- [ ] Handle execution time limits (chunking if needed)
-- [ ] Test with Preview
-- [ ] Run one-time to populate historical data
+- [x] Create backfill script with configurable date range
+- [x] Update to match new sheet structure (Raw_Ads_Daily, Raw_Ads_Keywords, Raw_Ads_SearchTerms, Raw_Ads_Geographic)
+- [x] Handle execution time limits (chunk by year via configurable START_DATE/END_DATE)
+- [x] Test with Preview (2024 data - 5424 daily, 30777 keywords, 83954 search terms, 7462 geographic)
+- [x] Run one-time to populate historical data (2022-2025 complete; 2018-2021 deferred)
 
 ## Backend Services (Apps Script)
 
 ### AdsService.js
+
 - [x] Basic implementation reading from sheets
-- [ ] Update to read from new sheet structure (4 sheets)
-- [ ] Add methods for each data level (campaigns, adGroups, keywords, searchTerms)
+- [ ] Update to read from `Summary_Monthly` for dashboard
+- [ ] Update to read from `Summary_Campaigns` for campaign list
+- [ ] Add drill-down methods for raw data (keywords, search terms)
 
 ### AnalyticsService.js
+
 - [x] Implement `getBasicReport()` with GA4 Data API
 - [x] Verify connection with `testGA4Connection()`
+- [ ] Expand to fetch by Campaign, Device, Country dimensions
+- [ ] Store results in `Raw_GA4_Daily` sheet
+- [ ] Schedule daily pull at 4 AM
+
+### AggregationService.js (NEW)
+
+- [ ] Create new service for nightly aggregation
+- [ ] Implement `aggregateMonthly()` - aggregate raw data by YearMonth × Campaign × Device × NetworkType
+- [ ] Implement `aggregateCampaigns()` - compute campaign totals (all-time, YTD, 12mo)
+- [ ] Implement `joinGA4Data()` - merge GA4 metrics at Campaign × Device level
+- [ ] Implement `nightlyAggregation()` - main entry point
+- [ ] Handle GA4 join limitation (repeat GA4 metrics across NetworkType rows)
+- [ ] Set up time-driven trigger for 5 AM
 
 ### SheetManager.js
+
 - [x] Basic sheet operations (find, create, append)
-- [ ] Update `setupSheets()` for new 6-sheet structure
+- [ ] Update `setupSheets()` for new 8-sheet structure:
+  - Raw: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`, `Raw_GA4_Daily`
+  - Summary: `Summary_Monthly`, `Summary_Campaigns`
+  - System: `System_Logs`
 - [ ] Add sheet-specific header definitions
+- [ ] Add `overwriteSheet()` method for summary sheets
 
 ### Config.js
+
 - [x] Basic configuration with API IDs
-- [ ] Add new sheet names:
-  - `Raw_Ads_Campaigns`
-  - `Raw_Ads_AdGroups`
-  - `Raw_Ads_Keywords`
-  - `Raw_Ads_SearchTerms`
+- [ ] Update sheet names:
+  - Raw: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`, `Raw_GA4_Daily`
+  - Summary: `Summary_Monthly`, `Summary_Campaigns`
+  - System: `System_Logs`
 
 ## Frontend Implementation
 
 ### Dashboard UI (`index.html`)
+
 - [x] Basic HTML skeleton
 - [ ] Add CSS styling for metric cards
 - [ ] Implement responsive grid layout
 - [ ] Add loading state indicator
 - [ ] Add error state handling
+- [ ] Add "data as of" timestamp display
 
 ### Client-Side Logic
+
 - [ ] Implement `google.script.run.getDashboardData()` call
-- [ ] Render summary metrics (Spend, Clicks, Impressions, Sessions, Conversions)
-- [ ] Render campaign list with key metrics
-- [ ] Add data refresh button
+- [ ] Render overall performance metrics (Spend, Clicks, Impressions, Sessions, Conversions)
+- [ ] Implement YoY comparison view (current month vs same month last year)
+- [ ] Implement campaign breakdown view
+- [ ] Implement network type breakdown (SEARCH vs DISPLAY)
+- [ ] Implement device breakdown (DESKTOP vs MOBILE vs TABLET)
+- [ ] Add drill-down to keyword detail
+- [ ] Add drill-down to search term detail
 
 ## Verification & Deployment
 
 ### Data Pipeline Verification
+
 - [x] Test GA4 API connection
 - [x] Test basic Ads script execution
-- [ ] Verify all 4 Ads sheets populate correctly
-- [ ] Verify GA4 sheet populates correctly
+- [x] Verify Raw_Ads_Daily populates correctly with Device, NetworkType
+- [x] Verify Raw_Ads_Keywords populates correctly
+- [x] Verify Raw_Ads_SearchTerms populates correctly
+- [x] Verify Raw_Ads_Geographic populates correctly with CountryCriterionId
+- [ ] Verify Raw_GA4_Daily populates correctly
+- [ ] Verify Summary_Monthly is computed correctly
+- [ ] Verify Summary_Campaigns is computed correctly
 - [ ] Spot-check 3 random dates against Google Ads UI
+- [ ] Verify Summary totals match Raw totals for same period
 
 ### Web App Deployment
+
 - [ ] Deploy as Test Deployment
 - [ ] Verify dashboard loads with real data
-- [ ] Verify load time < 3 seconds
+- [ ] Verify load time < 2 seconds
+- [ ] Verify YoY comparison works
+- [ ] Verify drill-down views work
 
 ### Git
-- [ ] Commit expanded script and spec updates
+
+- [ ] Commit updated scripts with new data model
+- [ ] Commit updated spec documents
 - [ ] Push to GitHub
 
 ## Status Legend

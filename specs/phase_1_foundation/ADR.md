@@ -223,3 +223,86 @@
   - (+) Can share different spreadsheets with different access levels if needed
   - (-) 6 spreadsheet IDs to manage in config
   - (-) Scripts need to reference multiple spreadsheets
+
+## ADR-013: GA4 Three-Table Architecture for Post-Click Funnel Analysis
+
+- **Status**: Accepted
+
+### Context
+
+The initial GA4 implementation used a single table (`Raw_GA4_Daily`) with aggregate metrics (sessions, bounce rate, conversions) by Campaign × Device × Country. This approach was fundamentally flawed because it treated GA4 as just "more metrics" rather than understanding its true purpose.
+
+**The core insight:** Google Ads tells us cost and clicks. GA4 tells us what happens *after* the click. This is the post-click funnel:
+
+```
+Ad Click → Landing Page → User Behavior → Conversion (or Bounce)
+```
+
+To optimize ad spend, we need to answer:
+1. **Where do users land?** - Which pages receive traffic, and do they convert or bounce?
+2. **What do users do?** - What actions indicate engagement vs abandonment?
+3. **What counts as success?** - Which events represent actual business value?
+
+The single-table approach couldn't answer these questions because:
+- It lacked landing page data entirely (can't diagnose "bad targeting" vs "bad page")
+- It used a pre-aggregated "conversions" metric (what if conversion tracking changed over time?)
+- It provided no visibility into user behavior patterns
+
+### Decision
+
+Split GA4 data into three specialized tables, each serving a distinct analytical purpose:
+
+| Table | Grain | Analytical Purpose |
+|-------|-------|-------------------|
+| `Raw_GA4_Sessions` | Date × Campaign × Device × Country | Traffic volume, quality, and geographic performance. Primary join point for Ads ROI calculations. |
+| `Raw_GA4_Pages` | Date × Campaign × LandingPage | Landing page effectiveness. Answers "is the page converting?" separately from "is the targeting right?" |
+| `Raw_GA4_Events` | Date × Campaign × EventName | User behavior and conversion tracking. Preserves raw event data so conversion definitions can evolve. |
+
+### Why Three Tables Instead of One?
+
+**Dimensionality explosion:** If we combined all dimensions (Date × Campaign × Device × Country × LandingPage × EventName), most row combinations would be empty while the few with data would be extremely granular. Three focused tables keep each dataset manageable.
+
+**Different questions, different grains:** Landing page analysis doesn't need device breakdown. Event analysis doesn't need country breakdown. Separating concerns keeps each table focused on its purpose.
+
+**Event data is special:** Unlike aggregate metrics, events tell a story. A user who fires `page_view → scroll → click_contact → form_submit` is showing progressive engagement. A user who fires only `page_view` bounced. By storing event counts, we preserve this behavioral signal.
+
+### Why Events Matter (Beyond "Flexible Conversions")
+
+Events are not just for letting the UI pick what counts as a conversion. Events are the behavioral data layer that tells us *what users actually do*:
+
+1. **Engagement signals:** Scroll events indicate interest. Click events show interaction. Time-based events show attention span.
+
+2. **Funnel visibility:** By tracking `form_start` vs `form_submit`, we can see form abandonment. By tracking `click_contact` vs actual contact, we can see intent that doesn't convert.
+
+3. **Historical continuity:** Conversion tracking changes. Maybe in 2022 you only had `form_submit`. In 2023 you added `calendar_booking`. In 2024 you added `phone_click`. By storing raw events, historical data doesn't become useless when tracking evolves.
+
+4. **Diagnostic power:** High sessions + low `scroll` events = landing page doesn't capture attention. High `form_start` + low `form_submit` = form UX problem. This diagnostic capability is lost with aggregate "conversion" metrics.
+
+### Data Filtering Decision
+
+We filter to campaign traffic only (exclude `(direct)` and `(not set)` sessions). This dashboard exists to analyze ad spend effectiveness. Direct traffic analysis is valuable but is a different question with different answers.
+
+### Alternatives Considered
+
+| Alternative | Why Rejected |
+|-------------|--------------|
+| Single table with all dimensions | Row explosion, most combinations empty, unfocused analysis |
+| Drop landing page dimension | Loses ability to diagnose page vs targeting problems |
+| Drop country dimension | User pushed back; important for understanding which markets perform |
+| Pre-aggregate conversions | Loses historical flexibility when tracking changes |
+| Skip events entirely | Loses behavioral insights and funnel visibility |
+
+### Consequences
+
+**Positive:**
+- Landing page analysis enables "fix the page" vs "fix the targeting" diagnosis
+- Event-level data preserves behavioral insights and conversion flexibility
+- Country analysis enables market performance comparison
+- Each table serves a focused purpose with manageable row counts
+- Historical data remains useful even as tracking evolves
+
+**Negative:**
+- 3 GA4 spreadsheets instead of 1 (8 total spreadsheets now)
+- 3 separate API calls per daily fetch
+- Dashboard aggregation logic becomes more complex
+- Joins across tables required for some analyses

@@ -12,6 +12,29 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 - Have a clean, customizable view without the noise of native interfaces
 - Get fast dashboard load times (< 2 seconds)
 
+## Analytics Approach: Connecting Ad Spend to Business Outcomes
+
+The core challenge is connecting **what we spend** (Google Ads) to **what we get** (booking inquiries). This requires understanding the full post-click funnel:
+
+```
+Ad Impression → Ad Click → Landing Page → User Engagement → Conversion
+     ↓              ↓            ↓               ↓              ↓
+   (Ads)         (Ads)        (GA4)           (GA4)          (GA4)
+  "reach"       "cost"       "where"         "what"        "outcome"
+```
+
+**Google Ads data answers:** How much did we spend? How many clicks? Which keywords/search terms drove traffic? Which countries/devices?
+
+**GA4 data answers:** What happened after the click? Did users bounce or engage? Which landing pages work? What actions did users take? Did they convert?
+
+By joining these data sources, we can calculate the metrics that matter:
+- **Cost per engaged session** (not just cost per click)
+- **Cost per conversion** (actual business outcome)
+- **Landing page effectiveness** (diagnose page vs targeting problems)
+- **Conversion funnel drop-off** (where are we losing people?)
+
+This is why GA4 data is split into three tables (Sessions, Pages, Events) - each answers different questions in the funnel. See ADR-013 for detailed rationale.
+
 ---
 
 ## Architecture Overview
@@ -30,10 +53,11 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 │  └─────────────────────┘              │  ├─ Raw_Ads_SearchTerms          │  │
 │                                       │  └─ Raw_Ads_Geographic           │  │
 │  ┌─────────────────────┐              │                                  │  │
-│  │  GA4 Data API       │─────────────→│  └─ Raw_GA4_Daily                │  │
-│  │  (Apps Script)      │    Pull      └──────────────────────────────────┘  │
-│  │  @ 4 AM daily       │    Daily                    │                      │
-│  └─────────────────────┘                             │                      │
+│  │  GA4 Data API       │─────────────→│  ├─ Raw_GA4_Sessions             │  │
+│  │  (Apps Script)      │    Pull      │  ├─ Raw_GA4_Pages                │  │
+│  │  @ 4 AM daily       │    Daily     │  └─ Raw_GA4_Events               │  │
+│  └─────────────────────┘              └──────────────────────────────────┘  │
+│                                                      │                      │
 │                                                      ▼                      │
 └─────────────────────────────────────────────────────────────────────────────┘
                                                        │
@@ -76,7 +100,7 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 
 | Tier | Sheets | Purpose | Read By |
 |------|--------|---------|---------|
-| **Raw Data** | Raw_Ads_Daily, Raw_Ads_Keywords, Raw_Ads_SearchTerms, Raw_Ads_Geographic, Raw_GA4_Daily | Source of truth, audit trail | Nightly aggregation, drill-down queries |
+| **Raw Data** | Raw_Ads_Daily, Raw_Ads_Keywords, Raw_Ads_SearchTerms, Raw_Ads_Geographic, Raw_GA4_Sessions, Raw_GA4_Pages, Raw_GA4_Events | Source of truth, audit trail | Nightly aggregation, drill-down queries |
 | **Summary Data** | Summary_Monthly, Summary_Campaigns | Fast dashboard queries | Dashboard (< 2 sec load) |
 
 ### Tech Stack
@@ -98,6 +122,7 @@ As a keynote speaker running Google Ads campaigns, the need is to:
 | **Database** | Google Sheets (two-tier) | Inspectable, no cost, raw + summary for speed |
 | **UI** | Apps Script Web App | Custom HTML/CSS/JS, no external hosting needed |
 | **Ads Data** | Hybrid (internal script) | Bypasses API approval requirement |
+| **GA4 Data** | Three tables (Sessions, Pages, Events) | Each answers different funnel questions; preserves event-level data for flexible analysis (ADR-013) |
 | **Rendering** | Client-side fetch from summaries | Fast first paint, < 2 sec load |
 | **Historical Data** | Up to 7 years | Daily aggregates fit within Sheets limits |
 
@@ -141,7 +166,9 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 | Raw_Ads_Keywords | `Raw_Ads_Keywords` | Raw | Keyword-level metrics with QualityScore | Google Ads script (daily push) |
 | Raw_Ads_SearchTerms | `Raw_Ads_SearchTerms` | Raw | Search term data for intent analysis | Google Ads script (daily push) |
 | Raw_Ads_Geographic | `Raw_Ads_Geographic` | Raw | Campaign metrics by Date × CountryCriterionId | Google Ads script (daily push) |
-| Raw_GA4_Daily | `Raw_GA4_Daily` | Raw | GA4 metrics by Campaign × Device × Country | Apps Script (daily pull) |
+| Raw_GA4_Sessions | `Raw_GA4_Sessions` | Raw | Session metrics by Campaign × Device × Country | Apps Script (daily pull) |
+| Raw_GA4_Pages | `Raw_GA4_Pages` | Raw | Landing page metrics by Campaign × LandingPage | Apps Script (daily pull) |
+| Raw_GA4_Events | `Raw_GA4_Events` | Raw | Event counts by Campaign × EventName | Apps Script (daily pull) |
 | Dashboard | `Summary_Monthly` | Summary | Monthly aggregates (Ads + GA4 joined) | Apps Script (nightly) |
 | Dashboard | `Summary_Campaigns` | Summary | Campaign totals for quick reference | Apps Script (nightly) |
 | Dashboard | `System_Logs` | System | Error/debug logging | Apps Script |
@@ -149,6 +176,10 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 **Notes:**
 - `Raw_Ads_Daily` and `Raw_Ads_Geographic` use separate queries due to Google Ads API segment restrictions
 - Geographic data uses `geographic_view` resource returning criterion IDs (not country names)
+- GA4 data split into three tables to answer different questions in the post-click funnel (see ADR-013):
+  - **Sessions**: "How much quality traffic did each campaign drive?" - joins to Ads for cost-per-engaged-session
+  - **Pages**: "Which landing pages work?" - separates targeting problems from page problems
+  - **Events**: "What do users actually do?" - captures behavior (scroll, click, form_submit) and enables flexible conversion definition as tracking evolves
 
 ---
 
@@ -164,38 +195,51 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 |-----------|--------|
 | GA4 API integration | ✅ Verified |
 | Basic Ads script (proof of concept) | ✅ Tested |
-| Updated Ads script (new data model) | 🟡 In Progress |
-| Historical backfill script | 🟡 In Progress |
-| Raw data sheets (4 sheets) | ⏳ Pending |
+| Updated Ads script (new data model) | ✅ Complete |
+| Historical backfill script (Ads) | ✅ Complete (2022-2025) |
+| Raw Ads data sheets (4 sheets) | ✅ Populated |
+| Raw GA4 data sheets (3 sheets) | ⏳ Pending |
 | Summary sheets (2 sheets) | ⏳ Pending |
 | Nightly aggregation job | ⏳ Pending |
 | Basic dashboard UI | 🟡 Skeleton built |
 | Web App deployment | ⏳ Pending |
 
-**Data Model**:
-- **Raw_Ads_Daily**: Campaign × Device × NetworkType (daily metrics)
-- **Raw_Ads_Keywords**: Keyword-level with QualityScore
-- **Raw_Ads_SearchTerms**: Search term detail
-- **Raw_Ads_Geographic**: Campaign × Country (separate due to API segment restrictions)
-- **Raw_GA4_Daily**: Sessions by Campaign × Device × Country
-- **Summary_Monthly**: Pre-aggregated for fast dashboard (Ads + GA4 joined)
-- **Summary_Campaigns**: Campaign totals
+**Data Model** (see `specs/phase_1_foundation/design.md` for full schema):
+
+*Pre-click data (Google Ads) - "What are we spending and where?"*
+- **Raw_Ads_Daily**: Campaign performance by Device × NetworkType - core spend/click metrics
+- **Raw_Ads_Keywords**: Keyword-level metrics - for bid optimization and QualityScore tracking
+- **Raw_Ads_SearchTerms**: Actual user queries - for intent analysis and negative keyword discovery
+- **Raw_Ads_Geographic**: Campaign performance by Country - for market analysis
+
+*Post-click data (GA4) - "What happens after users click?"*
+- **Raw_GA4_Sessions**: Traffic quality by Campaign × Device × Country - joins to Ads for ROI
+- **Raw_GA4_Pages**: Landing page effectiveness - diagnose page vs targeting issues
+- **Raw_GA4_Events**: User behavior and conversions - funnel visibility, flexible conversion definition
+
+*Aggregated data (Dashboard source) - "Fast queries for the UI"*
+- **Summary_Monthly**: Pre-aggregated Ads + GA4 joined at Campaign × Device level
+- **Summary_Campaigns**: Campaign totals for quick reference
 
 **Detailed specs**: See `specs/phase_1_foundation/`
 
 ---
 
-### Phase 2: Funnel Analysis
+### Phase 2: Advanced Funnel Visualization & Diagnostics
 
 **Status**: ⏳ Not Started
 
-**Goal**: Connect Ads clicks to GA4 sessions and track the full conversion funnel.
+**Goal**: Build on the Phase 1 data infrastructure to provide deeper funnel insights and diagnostic tools.
+
+**Note**: Phase 1 establishes the *data foundation* for funnel analysis (GA4 Sessions, Pages, Events tables). Phase 2 focuses on *visualization and diagnostics* using that data.
 
 **Planned Features**:
-- Map Ad clicks → GA4 sessions via UTM parameters
-- Track funnel: Impressions → Clicks → Sessions → Engagement → Inquiry
-- Calculate drop-off rates at each stage
-- Landing page performance comparison
+- Visual funnel diagram: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
+- Drop-off rate calculations at each funnel stage
+- Landing page comparison view (side-by-side performance)
+- Event sequence analysis (what actions precede conversions?)
+- Diagnostic alerts: "Campaign X has high clicks but low engagement - check landing page"
+- A/B landing page insights (if multiple pages receive traffic from same campaign)
 
 **Specs**: `specs/phase_2_funnel/` (to be created)
 

@@ -71,26 +71,119 @@ This phase establishes the core infrastructure for collecting Google Ads and GA4
 
 ### 2. Data Integration - GA4 (via API)
 
+#### 2.1 Purpose: Understanding Post-Click Behavior
+
+Google Ads tells us how much we spend and how many clicks we get. GA4 tells us what happens **after** users click on our ads. This is critical for answering:
+
+- Are we paying for clicks that lead nowhere (high bounce)?
+- Which landing pages actually convert visitors to inquiries?
+- What actions do engaged users take before converting?
+- Is there a difference in behavior between countries or devices?
+
+Without GA4 data, we only know cost-per-click. With GA4 data, we can calculate cost-per-engaged-session, cost-per-lead, and understand the full funnel from ad click to booking inquiry.
+
+#### 2.2 Three-Table Architecture
+
+GA4 data is split into three tables, each answering different questions. This separation exists because:
+1. Combining all dimensions (Campaign × Device × Country × LandingPage × EventName) would create an explosion of rows with most combinations empty
+2. Different analyses require different grains - landing page analysis doesn't need device breakdown
+3. Event-level data must be preserved independently because what constitutes a "conversion" may change over time
+
+##### Table 1: Raw_GA4_Sessions (Traffic Volume & Quality)
+
+**Purpose:** Understand how much traffic each campaign drives and whether that traffic is engaged or bouncing. This is the primary table for joining to Ads data to calculate ROI metrics.
+
+**Grain:** Date × Campaign × Device × Country
+
+**Key Questions Answered:**
+- How many sessions did each campaign drive?
+- What percentage of sessions were engaged (>10 seconds, or had a conversion/pageview)?
+- Are mobile users from Germany more engaged than desktop users from USA?
+- Which campaigns drive quality traffic vs wasted clicks?
+
+**Metrics:**
+- [ ] Sessions (total session count)
+- [ ] Users (unique visitors)
+- [ ] NewUsers (first-time visitors - indicates reach vs retention)
+- [ ] EngagedSessions (sessions with meaningful interaction)
+- [ ] BounceRate (% of sessions with no engagement)
+- [ ] AvgSessionDuration (time spent - interest indicator)
+
+##### Table 2: Raw_GA4_Pages (Landing Page Effectiveness)
+
+**Purpose:** Understand which landing pages convert visitors and which lose them. A campaign might have great click volume but send users to a page that doesn't resonate. This table separates "is the targeting right?" from "is the page right?"
+
+**Grain:** Date × Campaign × LandingPage
+
+**Key Questions Answered:**
+- Which landing pages have the highest engagement rates?
+- Are users landing on the right pages for their search intent?
+- Which pages should we optimize or replace?
+- Do certain campaigns perform better with specific landing pages?
+
+**Metrics:**
+- [ ] Sessions (traffic volume to this page)
+- [ ] EngagedSessions (did users stay and interact?)
+- [ ] BounceRate (did they leave immediately?)
+- [ ] PageViews (did they explore further?)
+
+##### Table 3: Raw_GA4_Events (User Behavior & Conversions)
+
+**Purpose:** Capture the specific actions users take on the site. This is the behavioral data that tells the story of what users actually DO, not just aggregate metrics.
+
+Events are critical because:
+1. **Behavior tells a story:** A user who scrolls 90% and clicks "Contact" is more valuable than one who bounces
+2. **Conversions evolve:** What counts as a "conversion" changes over time. Maybe initially it was just `form_submit`, but later you add `calendar_booking` or `phone_click`. By storing raw events, historical data remains useful.
+3. **Funnel analysis:** You can see the progression: page_view → scroll → click_contact → form_submit
+4. **Attribution flexibility:** The dashboard can let users define "conversion = form_submit + generate_lead + phone_click" without re-collecting data
+
+**Grain:** Date × Campaign × EventName
+
+**Key Questions Answered:**
+- How many form submissions did each campaign generate?
+- What's the scroll depth on our pages (engagement proxy)?
+- Are users clicking CTAs but not completing forms (UX issue)?
+- Which campaigns drive actual leads vs just pageviews?
+
+**Metrics:**
+- [ ] EventCount (number of times this event fired)
+
+**Common Events to Track:**
+- `page_view` - basic traffic
+- `scroll` - engagement indicator
+- `click` - interaction with elements
+- `form_start` - intent to convert
+- `form_submit` / `generate_lead` - actual conversion
+- `file_download` - research behavior
+- Custom events specific to the site
+
+#### 2.3 Data Filtering
+
+- [ ] Only pull campaign traffic (exclude direct/organic sessions)
+- [ ] Filter: `sessionCampaignName` is not "(not set)" or "(direct)"
+- [ ] Rationale: This dashboard is for analyzing ad spend effectiveness. Direct traffic analysis is a separate concern.
+
+#### 2.4 Technical Requirements
+
 - [ ] System must authenticate with GA4 Data API using configured Property ID
-- [ ] System must fetch daily metrics by campaign, device, and country:
-  - Sessions, Users, Engaged Sessions
-  - Bounce Rate, Average Session Duration
-  - Conversions
-- [ ] Data must be stored in `Raw_GA4_Daily` sheet
 - [ ] API configuration stored in `Config.js`
+- [ ] Three separate API calls per fetch (sessions, pages, events)
 - [ ] Daily pull scheduled at 4 AM (after Ads script completes)
+- [ ] Each table stored in its own spreadsheet (see `specs/spreadsheet_config.md`)
 
 ### 3. Data Storage (Google Sheets)
 
 #### 3.1 Raw Data Sheets (Source of Truth)
 
 - [ ] System must automatically create required sheets if they do not exist:
-  - `Raw_Ads_Daily`
-  - `Raw_Ads_Keywords`
-  - `Raw_Ads_SearchTerms`
-  - `Raw_Ads_Geographic`
-  - `Raw_GA4_Daily`
-  - `System_Logs`
+  - `Raw_Ads_Daily` - Campaign metrics by Device × NetworkType
+  - `Raw_Ads_Keywords` - Keyword-level performance
+  - `Raw_Ads_SearchTerms` - Search term analysis
+  - `Raw_Ads_Geographic` - Campaign metrics by Country
+  - `Raw_GA4_Sessions` - Session metrics by Campaign × Device × Country
+  - `Raw_GA4_Pages` - Landing page effectiveness
+  - `Raw_GA4_Events` - User behavior and conversion events
+  - `System_Logs` - Error and debug logging
 - [ ] Each sheet must have appropriate headers on first row
 - [ ] New data fetches must append rows (not overwrite history)
 - [ ] All data must include a Date column for historical analysis
@@ -133,9 +226,17 @@ This phase establishes the core infrastructure for collecting Google Ads and GA4
 
 - [ ] Keyword-level detail view (reads from Raw_Ads_Keywords)
 - [ ] Search term view (reads from Raw_Ads_SearchTerms)
+- [ ] Landing page performance view (reads from Raw_GA4_Pages)
 - [ ] Acceptable delay for drill-down views (2-3 seconds)
 
-#### 5.4 UI States
+#### 5.4 Conversion Event Selection
+
+- [ ] User can select which events count as "conversions" from available events
+- [ ] Selection persists across sessions (stored in config or localStorage)
+- [ ] Dashboard recalculates conversion metrics based on selection
+- [ ] Rationale: Conversion tracking evolves over time; this flexibility ensures historical data remains useful
+
+#### 5.5 UI States
 
 - [ ] Loading state while data is being fetched
 - [ ] Error state if data fetch fails
@@ -185,8 +286,11 @@ This phase establishes the core infrastructure for collecting Google Ads and GA4
 ### Data Pipeline
 
 - [ ] Daily Ads script populates Raw_Ads_Daily, Raw_Ads_Keywords, Raw_Ads_SearchTerms, Raw_Ads_Geographic
-- [ ] Daily GA4 pull populates Raw_GA4_Daily
-- [ ] Backfill script successfully loads 2+ years of historical data
+- [ ] Daily GA4 pull populates all three GA4 tables:
+  - Raw_GA4_Sessions (traffic volume and quality by Campaign × Device × Country)
+  - Raw_GA4_Pages (landing page effectiveness by Campaign × LandingPage)
+  - Raw_GA4_Events (user behavior by Campaign × EventName)
+- [ ] Backfill script successfully loads 2+ years of historical data (both Ads and GA4)
 - [ ] Nightly aggregation produces Summary_Monthly and Summary_Campaigns
 - [ ] All sheets have correct headers and data types
 

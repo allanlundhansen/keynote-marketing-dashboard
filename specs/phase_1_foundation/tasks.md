@@ -42,10 +42,27 @@
 
 ### AnalyticsService.js
 
+**Three-Table Architecture** (see ADR-013):
+- `Raw_GA4_Sessions` - Session metrics by Campaign × Device × Country
+- `Raw_GA4_Pages` - Landing page metrics by Campaign × LandingPage
+- `Raw_GA4_Events` - Event counts by Campaign × EventName
+
+**Setup:**
+- [ ] Create 3 new Google Spreadsheets for GA4 data
+- [ ] Update `specs/spreadsheet_config.md` with new spreadsheet IDs
+- [ ] Update `src/Config.js` with new spreadsheet IDs
+
+**Implementation:**
 - [x] Implement `getBasicReport()` with GA4 Data API
 - [x] Verify connection with `testGA4Connection()`
-- [ ] Expand to fetch by Campaign, Device, Country dimensions
-- [ ] Store results in `Raw_GA4_Daily` sheet
+- [ ] Rewrite `fetchGA4Data()` to use three-table architecture:
+  - [ ] `fetchGA4Sessions(startDate, endDate)` - Campaign × Device × Country
+  - [ ] `fetchGA4Pages(startDate, endDate)` - Campaign × LandingPage
+  - [ ] `fetchGA4Events(startDate, endDate)` - Campaign × EventName
+- [ ] Filter to campaign traffic only (exclude direct/organic)
+- [ ] Implement `pullDailyGA4()` to call all three fetch functions
+- [ ] Test with `testGA4Fetch()` function
+- [ ] Backfill historical GA4 data (2022-2025)
 - [ ] Schedule daily pull at 4 AM
 
 ### AggregationService.js (NEW)
@@ -61,8 +78,9 @@
 ### SheetManager.js
 
 - [x] Basic sheet operations (find, create, append)
-- [ ] Update `setupSheets()` for new 8-sheet structure:
-  - Raw: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`, `Raw_GA4_Daily`
+- [ ] Update `setupSheets()` for new 10-sheet structure:
+  - Raw Ads: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`
+  - Raw GA4: `Raw_GA4_Sessions`, `Raw_GA4_Pages`, `Raw_GA4_Events`
   - Summary: `Summary_Monthly`, `Summary_Campaigns`
   - System: `System_Logs`
 - [ ] Add sheet-specific header definitions
@@ -71,8 +89,9 @@
 ### Config.js
 
 - [x] Basic configuration with API IDs
-- [ ] Update sheet names:
-  - Raw: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`, `Raw_GA4_Daily`
+- [ ] Update sheet names and spreadsheet IDs:
+  - Raw Ads: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`
+  - Raw GA4: `Raw_GA4_Sessions`, `Raw_GA4_Pages`, `Raw_GA4_Events`
   - Summary: `Summary_Monthly`, `Summary_Campaigns`
   - System: `System_Logs`
 
@@ -97,6 +116,8 @@
 - [ ] Implement device breakdown (DESKTOP vs MOBILE vs TABLET)
 - [ ] Add drill-down to keyword detail
 - [ ] Add drill-down to search term detail
+- [ ] Add landing page performance view (from Raw_GA4_Pages)
+- [ ] Add conversion event selector (let user pick which events = "conversion" from Raw_GA4_Events)
 
 ## Verification & Deployment
 
@@ -108,7 +129,9 @@
 - [x] Verify Raw_Ads_Keywords populates correctly
 - [x] Verify Raw_Ads_SearchTerms populates correctly
 - [x] Verify Raw_Ads_Geographic populates correctly with CountryCriterionId
-- [ ] Verify Raw_GA4_Daily populates correctly
+- [ ] Verify Raw_GA4_Sessions populates correctly (Campaign × Device × Country)
+- [ ] Verify Raw_GA4_Pages populates correctly (Campaign × LandingPage)
+- [ ] Verify Raw_GA4_Events populates correctly (Campaign × EventName)
 - [ ] Verify Summary_Monthly is computed correctly
 - [ ] Verify Summary_Campaigns is computed correctly
 - [ ] Spot-check 3 random dates against Google Ads UI

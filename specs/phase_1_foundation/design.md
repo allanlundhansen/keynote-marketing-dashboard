@@ -16,10 +16,11 @@ We are using a **Serverless-like architecture** hosted on Google Apps Script wit
 │  └─────────────────────┘              │  ├─ Raw_Ads_SearchTerms          │  │
 │                                       │  └─ Raw_Ads_Geographic           │  │
 │  ┌─────────────────────┐              │                                  │  │
-│  │  GA4 Data API       │─────────────→│  └─ Raw_GA4_Daily                │  │
-│  │  (Apps Script)      │    Pull      └──────────────────────────────────┘  │
-│  │  @ 4 AM daily       │    Daily                    │                      │
-│  └─────────────────────┘                             │                      │
+│  │  GA4 Data API       │─────────────→│  ├─ Raw_GA4_Sessions             │  │
+│  │  (Apps Script)      │    Pull      │  ├─ Raw_GA4_Pages                │  │
+│  │  @ 4 AM daily       │    Daily     │  └─ Raw_GA4_Events               │  │
+│  └─────────────────────┘              └──────────────────────────────────┘  │
+│                                                      │                      │
 │                                                      ▼                      │
 └─────────────────────────────────────────────────────────────────────────────┘
                                                        │
@@ -73,7 +74,9 @@ Due to Google Sheets' 10 million cell limit, each data type is stored in its own
 | Raw_Ads_Keywords | Keyword-level metrics | ~4,000,000 |
 | Raw_Ads_SearchTerms | Search term data | ~7,000,000 |
 | Raw_Ads_Geographic | Campaign × Country metrics | ~500,000 |
-| Raw_GA4_Daily | GA4 session metrics | ~500,000 |
+| Raw_GA4_Sessions | Session metrics by Campaign × Device × Country | ~500,000 |
+| Raw_GA4_Pages | Landing page metrics by Campaign × LandingPage | ~300,000 |
+| Raw_GA4_Events | Event counts by Campaign × EventName | ~200,000 |
 | Dashboard | Summary_Monthly, Summary_Campaigns, System_Logs | ~100,000 |
 
 Configuration: See `specs/spreadsheet_config.md` for all spreadsheet IDs.
@@ -140,9 +143,41 @@ Daily campaign-level metrics by device and network type.
 
 **Estimated rows (7 years):** ~100,000-150,000
 
-#### Sheet: `Raw_GA4_Daily`
+#### GA4 Data Architecture (Three Tables)
 
-Daily GA4 metrics by campaign and device.
+**Purpose:** GA4 answers "what happens after users click on our ads?" This is the post-click funnel that connects ad spend to business outcomes.
+
+```
+Ad Click → Landing Page → User Behavior → Conversion (or Bounce)
+              ↓                ↓                ↓
+         GA4_Pages       GA4_Events      GA4_Sessions
+```
+
+GA4 data is split into three tables because each answers different questions:
+
+1. **Sessions** - "How much quality traffic did each campaign drive?"
+   - Traffic volume and engagement by Campaign × Device × Country
+   - Primary join point for Ads data to calculate cost-per-engaged-session
+   - Enables geographic performance analysis (which markets convert?)
+
+2. **Pages** - "Which landing pages work?"
+   - Separates "is the targeting right?" from "is the page right?"
+   - A campaign might drive clicks to a page that bounces everyone
+   - Enables landing page optimization independently from targeting optimization
+
+3. **Events** - "What do users actually do, and what counts as success?"
+   - Captures user behavior: scroll, click, form_start, form_submit, etc.
+   - Enables funnel analysis: page_view → engagement → conversion
+   - Preserves raw events so "conversion" definition can evolve over time
+   - Diagnostic power: high form_start + low form_submit = UX problem
+
+**Filtering:** Only campaign traffic is pulled (excludes direct/organic). This dashboard exists to analyze ad spend effectiveness. Direct traffic is a different analysis.
+
+See ADR-013 for full rationale on this architecture.
+
+#### Sheet: `Raw_GA4_Sessions`
+
+Session-level metrics for joining to Ads data and geographic analysis.
 
 **Grain:** Date × Campaign × Device × Country
 
@@ -154,14 +189,47 @@ Daily GA4 metrics by campaign and device.
 | Country | String | Country name |
 | Sessions | Number | Session count |
 | Users | Number | Total users |
-| EngagedSessions | Number | Sessions with engagement |
+| NewUsers | Number | First-time visitors |
+| EngagedSessions | Number | Sessions with engagement (>10s or conversion) |
 | BounceRate | Number | Decimal (0-1) |
 | AvgSessionDuration | Number | Seconds |
-| Conversions | Number | Goal completions |
 
 **Note:** GA4 does not have NetworkType dimension. This is a known limitation when joining with Ads data.
 
 **Estimated rows (7 years):** ~50,000-75,000
+
+#### Sheet: `Raw_GA4_Pages`
+
+Landing page performance for understanding which pages convert.
+
+**Grain:** Date × Campaign × LandingPage
+
+| Column | Type | Description |
+|--------|------|-------------|
+| Date | Date | YYYY-MM-DD |
+| Campaign | String | Campaign name |
+| LandingPage | String | Landing page path (e.g., /speaking, /contact) |
+| Sessions | Number | Session count |
+| EngagedSessions | Number | Sessions with engagement |
+| BounceRate | Number | Decimal (0-1) |
+| PageViews | Number | Total page views |
+
+**Estimated rows (7 years):** ~30,000-50,000
+
+#### Sheet: `Raw_GA4_Events`
+
+Event-level data for flexible conversion definition. The UI can let users select which events count as "conversions" rather than hardcoding this at data collection time.
+
+**Grain:** Date × Campaign × EventName
+
+| Column | Type | Description |
+|--------|------|-------------|
+| Date | Date | YYYY-MM-DD |
+| Campaign | String | Campaign name |
+| EventName | String | GA4 event name (e.g., page_view, scroll, form_submit, generate_lead) |
+| EventCount | Number | Number of times event fired |
+
+**Estimated rows (7 years):** ~20,000-40,000 (depends on number of event types)
 
 #### Sheet: `Raw_Ads_Keywords`
 

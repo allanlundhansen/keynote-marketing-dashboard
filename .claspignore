@@ -1,0 +1,3 @@
+# Google Ads scripts - these run INSIDE Google Ads account, not in Apps Script
+AdsScript_Internal.js
+AdsScript_Backfill.js

@@ -33,6 +33,7 @@ const Config = {
     RAW_GA4_PAGES: 'Raw_GA4_Pages',
     RAW_GA4_EVENTS: 'Raw_GA4_Events',
     SUMMARY_MONTHLY: 'Summary_Monthly',
+    SUMMARY_EVENTS: 'Summary_Events',
     SUMMARY_CAMPAIGNS: 'Summary_Campaigns',
     SYSTEM_LOGS: 'System_Logs'
   }

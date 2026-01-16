@@ -10,62 +10,62 @@ This phase establishes the core infrastructure for collecting Google Ads and GA4
 
 #### 1.1 Daily Export Script
 
-- [ ] Script must run inside Google Ads account (not via external API)
-- [ ] Script must export to 4 raw data sheets:
+- [x] Script must run inside Google Ads account (not via external API)
+- [x] Script must export to 4 raw data sheets:
   - Campaign-level by Device × NetworkType → `Raw_Ads_Daily`
   - Keyword-level → `Raw_Ads_Keywords`
   - Search Term-level → `Raw_Ads_SearchTerms`
   - Campaign-level by Country → `Raw_Ads_Geographic`
-- [ ] Script must be schedulable for daily automated runs (3 AM)
-- [ ] Script must handle the case where sheets don't exist (create with headers)
+- [x] Script must be schedulable for daily automated runs (3 AM)
+- [x] Script must handle the case where sheets don't exist (create with headers)
 
 #### 1.2 Historical Backfill Script
 
-- [ ] One-time script to export historical data (up to 7 years where available)
-- [ ] Must populate all 4 raw Ads sheets with historical data
-- [ ] Must handle Google Ads script execution time limits (chunk by year if necessary)
+- [x] One-time script to export historical data (up to 7 years where available)
+- [x] Must populate all 4 raw Ads sheets with historical data
+- [x] Must handle Google Ads script execution time limits (chunk by year if necessary)
 
 #### 1.3 Raw_Ads_Daily Metrics (per Date × Campaign × Device × NetworkType)
 
-- [ ] Date
-- [ ] Campaign ID, Name, Type (SEARCH, DISPLAY, etc.)
-- [ ] Status (ENABLED, PAUSED, REMOVED)
-- [ ] Device (DESKTOP, MOBILE, TABLET)
-- [ ] NetworkType (SEARCH, DISPLAY, YOUTUBE, etc.)
-- [ ] Cost (converted from micros)
-- [ ] Clicks, Impressions, CTR
-- [ ] Average CPC
-- [ ] Conversions, Cost per Conversion
-- [ ] Search Impression Share
+- [x] Date
+- [x] Campaign ID, Name, Type (SEARCH, DISPLAY, etc.)
+- [x] Status (ENABLED, PAUSED, REMOVED)
+- [x] Device (DESKTOP, MOBILE, TABLET)
+- [x] NetworkType (SEARCH, DISPLAY, YOUTUBE, etc.)
+- [x] Cost (converted from micros)
+- [x] Clicks, Impressions, CTR
+- [x] Average CPC
+- [x] Conversions, Cost per Conversion
+- [x] Search Impression Share
 
 **Note:** Country is in a separate sheet due to Google Ads API segment restrictions.
 
 #### 1.4 Raw_Ads_Keywords Metrics (per Date × Keyword × Device × NetworkType)
 
-- [ ] Date
-- [ ] Campaign ID, Name, Type
-- [ ] Ad Group ID, Name
-- [ ] Keyword ID, Text, Match Type
-- [ ] Status, Quality Score
-- [ ] Device, NetworkType
-- [ ] Cost, Clicks, Impressions, CTR, AvgCPC, Conversions
+- [x] Date
+- [x] Campaign ID, Name, Type
+- [x] Ad Group ID, Name
+- [x] Keyword ID, Text, Match Type
+- [x] Status, Quality Score
+- [x] Device, NetworkType
+- [x] Cost, Clicks, Impressions, CTR, AvgCPC, Conversions
 
 #### 1.5 Raw_Ads_SearchTerms Metrics (per Date × SearchTerm × Device)
 
-- [ ] Date
-- [ ] Campaign ID, Name, Type
-- [ ] Ad Group ID, Name
-- [ ] Matched Keyword Text
-- [ ] Actual Search Term (user query)
-- [ ] Device
-- [ ] Cost, Clicks, Impressions, CTR, Conversions
+- [x] Date
+- [x] Campaign ID, Name, Type
+- [x] Ad Group ID, Name
+- [x] Matched Keyword Text
+- [x] Actual Search Term (user query)
+- [x] Device
+- [x] Cost, Clicks, Impressions, CTR, Conversions
 
 #### 1.6 Raw_Ads_Geographic Metrics (per Date × Campaign × CountryCriterionId)
 
-- [ ] Date
-- [ ] Campaign ID, Name, Type
-- [ ] CountryCriterionId (numeric geo target criterion ID, e.g., 2840 = USA)
-- [ ] Cost, Clicks, Impressions, CTR, Conversions
+- [x] Date
+- [x] Campaign ID, Name, Type
+- [x] CountryCriterionId (numeric geo target criterion ID, e.g., 2840 = USA)
+- [x] Cost, Clicks, Impressions, CTR, Conversions
 
 **Note:** Cannot include Device or NetworkType due to API segment incompatibility. Uses `geographic_view` resource which returns criterion IDs instead of country names. Country names resolved in dashboard/aggregation layer.
 
@@ -102,12 +102,12 @@ GA4 data is split into three tables, each answering different questions. This se
 - Which campaigns drive quality traffic vs wasted clicks?
 
 **Metrics:**
-- [ ] Sessions (total session count)
-- [ ] Users (unique visitors)
-- [ ] NewUsers (first-time visitors - indicates reach vs retention)
-- [ ] EngagedSessions (sessions with meaningful interaction)
-- [ ] BounceRate (% of sessions with no engagement)
-- [ ] AvgSessionDuration (time spent - interest indicator)
+- [x] Sessions (total session count)
+- [x] Users (unique visitors)
+- [x] NewUsers (first-time visitors - indicates reach vs retention)
+- [x] EngagedSessions (sessions with meaningful interaction)
+- [x] BounceRate (% of sessions with no engagement)
+- [x] AvgSessionDuration (time spent - interest indicator)
 
 ##### Table 2: Raw_GA4_Pages (Landing Page Effectiveness)
 
@@ -122,10 +122,10 @@ GA4 data is split into three tables, each answering different questions. This se
 - Do certain campaigns perform better with specific landing pages?
 
 **Metrics:**
-- [ ] Sessions (traffic volume to this page)
-- [ ] EngagedSessions (did users stay and interact?)
-- [ ] BounceRate (did they leave immediately?)
-- [ ] PageViews (did they explore further?)
+- [x] Sessions (traffic volume to this page)
+- [x] EngagedSessions (did users stay and interact?)
+- [x] BounceRate (did they leave immediately?)
+- [x] PageViews (did they explore further?)
 
 ##### Table 3: Raw_GA4_Events (User Behavior & Conversions)
 
@@ -146,7 +146,7 @@ Events are critical because:
 - Which campaigns drive actual leads vs just pageviews?
 
 **Metrics:**
-- [ ] EventCount (number of times this event fired)
+- [x] EventCount (number of times this event fired)
 
 **Common Events to Track:**
 - `page_view` - basic traffic
@@ -159,23 +159,23 @@ Events are critical because:
 
 #### 2.3 Data Filtering
 
-- [ ] Only pull campaign traffic (exclude direct/organic sessions)
-- [ ] Filter: `sessionCampaignName` is not "(not set)" or "(direct)"
-- [ ] Rationale: This dashboard is for analyzing ad spend effectiveness. Direct traffic analysis is a separate concern.
+- [x] Only pull campaign traffic (exclude direct/organic sessions)
+- [x] Filter: `sessionCampaignName` is not "(not set)" or "(direct)"
+- [x] Rationale: This dashboard is for analyzing ad spend effectiveness. Direct traffic analysis is a separate concern.
 
 #### 2.4 Technical Requirements
 
-- [ ] System must authenticate with GA4 Data API using configured Property ID
-- [ ] API configuration stored in `Config.js`
-- [ ] Three separate API calls per fetch (sessions, pages, events)
-- [ ] Daily pull scheduled at 4 AM (after Ads script completes)
-- [ ] Each table stored in its own spreadsheet (see `specs/spreadsheet_config.md`)
+- [x] System must authenticate with GA4 Data API using configured Property ID
+- [x] API configuration stored in `Config.js`
+- [x] Three separate API calls per fetch (sessions, pages, events)
+- [x] Daily pull scheduled at 4 AM (after Ads script completes)
+- [x] Each table stored in its own spreadsheet (see `specs/spreadsheet_config.md`)
 
 ### 3. Data Storage (Google Sheets)
 
 #### 3.1 Raw Data Sheets (Source of Truth)
 
-- [ ] System must automatically create required sheets if they do not exist:
+- [x] System must automatically create required sheets if they do not exist:
   - `Raw_Ads_Daily` - Campaign metrics by Device × NetworkType
   - `Raw_Ads_Keywords` - Keyword-level performance
   - `Raw_Ads_SearchTerms` - Search term analysis
@@ -184,9 +184,9 @@ Events are critical because:
   - `Raw_GA4_Pages` - Landing page effectiveness
   - `Raw_GA4_Events` - User behavior and conversion events
   - `System_Logs` - Error and debug logging
-- [ ] Each sheet must have appropriate headers on first row
-- [ ] New data fetches must append rows (not overwrite history)
-- [ ] All data must include a Date column for historical analysis
+- [x] Each sheet must have appropriate headers on first row
+- [x] New data fetches must append rows (not overwrite history)
+- [x] All data must include a Date column for historical analysis
 
 #### 3.2 Summary Sheets (Dashboard Source)
 
@@ -244,10 +244,10 @@ Events are critical because:
 
 ### 6. Configuration
 
-- [ ] All environment-specific values in `Config.js`:
+- [x] All environment-specific values in `Config.js`:
   - Google Ads Customer ID
   - GA4 Property ID
-  - Google Sheet ID
+  - Google Sheet IDs (multi-spreadsheet architecture)
   - Sheet names (raw and summary)
   - Default lookback period
 
@@ -285,14 +285,14 @@ Events are critical because:
 
 ### Data Pipeline
 
-- [ ] Daily Ads script populates Raw_Ads_Daily, Raw_Ads_Keywords, Raw_Ads_SearchTerms, Raw_Ads_Geographic
-- [ ] Daily GA4 pull populates all three GA4 tables:
+- [x] Daily Ads script populates Raw_Ads_Daily, Raw_Ads_Keywords, Raw_Ads_SearchTerms, Raw_Ads_Geographic
+- [x] Daily GA4 pull populates all three GA4 tables:
   - Raw_GA4_Sessions (traffic volume and quality by Campaign × Device × Country)
   - Raw_GA4_Pages (landing page effectiveness by Campaign × LandingPage)
   - Raw_GA4_Events (user behavior by Campaign × EventName)
-- [ ] Backfill script successfully loads 2+ years of historical data (both Ads and GA4)
+- [x] Backfill script successfully loads 2+ years of historical data (both Ads and GA4)
 - [ ] Nightly aggregation produces Summary_Monthly and Summary_Campaigns
-- [ ] All sheets have correct headers and data types
+- [x] All sheets have correct headers and data types
 
 ### Dashboard
 
@@ -304,7 +304,7 @@ Events are critical because:
 
 ### Verification
 
-- [ ] `testGA4Connection()` returns success with real data
-- [ ] Ads script Preview shows success logs
+- [x] `testGA4Connection()` returns success with real data
+- [x] Ads script Preview shows success logs
 - [ ] Manual comparison of 3 random dates against Google Ads UI matches
 - [ ] Summary_Monthly totals match Raw_Ads_Daily totals for same period

@@ -196,9 +196,10 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 | GA4 API integration | ✅ Verified |
 | Basic Ads script (proof of concept) | ✅ Tested |
 | Updated Ads script (new data model) | ✅ Complete |
-| Historical backfill script (Ads) | ✅ Complete (2022-2025) |
+| Historical backfill script (Ads) | ✅ Complete (2022-2026) |
 | Raw Ads data sheets (4 sheets) | ✅ Populated |
-| Raw GA4 data sheets (3 sheets) | ⏳ Pending |
+| Raw GA4 data sheets (3 sheets) | ✅ Populated (2022-2026) |
+| Daily triggers (Ads 3AM, GA4 4AM) | ✅ Configured |
 | Summary sheets (2 sheets) | ⏳ Pending |
 | Nightly aggregation job | ⏳ Pending |
 | Basic dashboard UI | 🟡 Skeleton built |

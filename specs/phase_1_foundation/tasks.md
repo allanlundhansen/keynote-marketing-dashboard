@@ -6,7 +6,7 @@
 - [x] Create centralized `Config.js`
 - [x] Configure OAuth scopes in `appsscript.json`
 - [x] Validate GA4 API access with real credentials
-- [ ] Update `Config.js` with new sheet names (raw + summary sheets)
+- [x] Update `Config.js` with new sheet names (raw + summary sheets)
 
 ## Google Ads Internal Scripts
 
@@ -48,22 +48,22 @@
 - `Raw_GA4_Events` - Event counts by Campaign × EventName
 
 **Setup:**
-- [ ] Create 3 new Google Spreadsheets for GA4 data
-- [ ] Update `specs/spreadsheet_config.md` with new spreadsheet IDs
-- [ ] Update `src/Config.js` with new spreadsheet IDs
+- [x] Create 3 new Google Spreadsheets for GA4 data
+- [x] Update `specs/spreadsheet_config.md` with new spreadsheet IDs
+- [x] Update `src/Config.js` with new spreadsheet IDs
 
 **Implementation:**
 - [x] Implement `getBasicReport()` with GA4 Data API
 - [x] Verify connection with `testGA4Connection()`
-- [ ] Rewrite `fetchGA4Data()` to use three-table architecture:
-  - [ ] `fetchGA4Sessions(startDate, endDate)` - Campaign × Device × Country
-  - [ ] `fetchGA4Pages(startDate, endDate)` - Campaign × LandingPage
-  - [ ] `fetchGA4Events(startDate, endDate)` - Campaign × EventName
-- [ ] Filter to campaign traffic only (exclude direct/organic)
-- [ ] Implement `pullDailyGA4()` to call all three fetch functions
-- [ ] Test with `testGA4Fetch()` function
-- [ ] Backfill historical GA4 data (2022-2025)
-- [ ] Schedule daily pull at 4 AM
+- [x] Rewrite `fetchGA4Data()` to use three-table architecture:
+  - [x] `fetchGA4Sessions(startDate, endDate)` - Campaign × Device × Country
+  - [x] `fetchGA4Pages(startDate, endDate)` - Campaign × LandingPage
+  - [x] `fetchGA4Events(startDate, endDate)` - Campaign × EventName
+- [x] Filter to campaign traffic only (exclude direct/organic)
+- [x] Implement `pullDailyGA4()` to call all three fetch functions
+- [x] Test with `testGA4Fetch()` function
+- [x] Backfill historical GA4 data (2022-2026)
+- [x] Schedule daily pull at 4 AM
 
 ### AggregationService.js (NEW)
 
@@ -89,7 +89,7 @@
 ### Config.js
 
 - [x] Basic configuration with API IDs
-- [ ] Update sheet names and spreadsheet IDs:
+- [x] Update sheet names and spreadsheet IDs:
   - Raw Ads: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`
   - Raw GA4: `Raw_GA4_Sessions`, `Raw_GA4_Pages`, `Raw_GA4_Events`
   - Summary: `Summary_Monthly`, `Summary_Campaigns`
@@ -129,9 +129,9 @@
 - [x] Verify Raw_Ads_Keywords populates correctly
 - [x] Verify Raw_Ads_SearchTerms populates correctly
 - [x] Verify Raw_Ads_Geographic populates correctly with CountryCriterionId
-- [ ] Verify Raw_GA4_Sessions populates correctly (Campaign × Device × Country)
-- [ ] Verify Raw_GA4_Pages populates correctly (Campaign × LandingPage)
-- [ ] Verify Raw_GA4_Events populates correctly (Campaign × EventName)
+- [x] Verify Raw_GA4_Sessions populates correctly (Campaign × Device × Country)
+- [x] Verify Raw_GA4_Pages populates correctly (Campaign × LandingPage)
+- [x] Verify Raw_GA4_Events populates correctly (Campaign × EventName)
 - [ ] Verify Summary_Monthly is computed correctly
 - [ ] Verify Summary_Campaigns is computed correctly
 - [ ] Spot-check 3 random dates against Google Ads UI

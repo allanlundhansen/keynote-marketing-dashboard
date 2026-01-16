@@ -67,20 +67,20 @@
 
 ### Device Dimension in Events (ADR-014)
 
-- [ ] Update `fetchGA4Events()` to include `deviceCategory` dimension
-- [ ] Update `HEADERS_EVENTS` constant to include Device
-- [ ] Update `processEventsResponse()` to include Device
-- [ ] Clear existing Raw_GA4_Events spreadsheet data
-- [ ] Re-backfill Events data for 2022-2026
+- [x] Update `fetchGA4Events()` to include `deviceCategory` dimension
+- [x] Update `HEADERS_EVENTS` constant to include Device
+- [x] Update `processEventsResponse()` to include Device
+- [x] Clear existing Raw_GA4_Events spreadsheet data
+- [x] Re-backfill Events data for 2022-2026
 
 ### AggregationService.js (NEW)
 
-- [ ] Create new service for nightly aggregation
-- [ ] Implement `aggregateMonthly()` - aggregate Ads + Sessions by YearMonth × Campaign × Device
-- [ ] Implement `aggregateEvents()` - aggregate Events by YearMonth × Campaign × Device × EventName
-- [ ] Implement `aggregateCampaigns()` - compute campaign totals with JSON event counts
-- [ ] Implement `nightlyAggregation()` - main entry point
-- [ ] Set up time-driven trigger for 5 AM
+- [x] Create new service for nightly aggregation
+- [x] Implement `aggregateMonthly()` - aggregate Ads + Sessions by YearMonth × Campaign × Device
+- [x] Implement `aggregateEvents()` - aggregate Events by YearMonth × Campaign × Device × EventName
+- [x] Implement `aggregateCampaigns()` - compute campaign totals with JSON event counts
+- [x] Implement `nightlyAggregation()` - main entry point
+- [x] Set up time-driven trigger for 5 AM
 
 ### SheetManager.js
 

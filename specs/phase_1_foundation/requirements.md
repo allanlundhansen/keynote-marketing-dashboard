@@ -137,13 +137,14 @@ Events are critical because:
 3. **Funnel analysis:** You can see the progression: page_view → scroll → click_contact → form_submit
 4. **Attribution flexibility:** The dashboard can let users define "conversion = form_submit + generate_lead + phone_click" without re-collecting data
 
-**Grain:** Date × Campaign × EventName
+**Grain:** Date × Campaign × Device × EventName
 
 **Key Questions Answered:**
 - How many form submissions did each campaign generate?
 - What's the scroll depth on our pages (engagement proxy)?
 - Are users clicking CTAs but not completing forms (UX issue)?
 - Which campaigns drive actual leads vs just pageviews?
+- **Do mobile users convert better than desktop users?** (enabled by Device dimension - see ADR-014)
 
 **Metrics:**
 - [x] EventCount (number of times this event fired)
@@ -191,18 +192,22 @@ Events are critical because:
 #### 3.2 Summary Sheets (Dashboard Source)
 
 - [ ] System must create and maintain summary sheets:
-  - `Summary_Monthly` - Monthly aggregates by Campaign × Device × NetworkType
-  - `Summary_Campaigns` - Campaign-level totals (all-time, YTD, last 12 months)
+  - `Summary_Monthly` - Monthly aggregates by Campaign × Device (Ads + GA4 Sessions joined)
+  - `Summary_Events` - Monthly event counts by Campaign × Device × EventName (for flexible conversion selection)
+  - `Summary_Campaigns` - Campaign-level totals (all-time, last 12 months) with JSON for event aggregates
 - [ ] Summary sheets must be recomputed nightly (5 AM trigger)
 - [ ] Summary sheets are overwritten (not appended) on each computation
+
+**Note:** NetworkType removed from Summary_Monthly grain. Use CampaignType (SEARCH, DISPLAY, VIDEO) for network-level analysis instead. This avoids data redundancy since GA4 doesn't have NetworkType dimension.
 
 ### 4. Nightly Aggregation Job
 
 - [ ] Apps Script time-driven trigger at 5 AM
-- [ ] Reads from raw data sheets
-- [ ] Computes monthly aggregates with both Ads and GA4 metrics
-- [ ] Handles GA4 join limitation (no NetworkType in GA4)
-- [ ] Writes to summary sheets
+- [ ] Reads from raw data sheets (Raw_Ads_Daily, Raw_GA4_Sessions, Raw_GA4_Events)
+- [ ] Computes Summary_Monthly: aggregate Ads + Sessions at YearMonth × Campaign × Device
+- [ ] Computes Summary_Events: aggregate Events at YearMonth × Campaign × Device × EventName
+- [ ] Computes Summary_Campaigns: campaign totals with JSON event counts
+- [ ] Writes to summary sheets (overwrite, not append)
 - [ ] Logs success/failure to System_Logs
 
 ### 5. Dashboard (Frontend)

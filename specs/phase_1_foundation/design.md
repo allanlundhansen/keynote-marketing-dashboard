@@ -218,18 +218,21 @@ Landing page performance for understanding which pages convert.
 
 #### Sheet: `Raw_GA4_Events`
 
-Event-level data for flexible conversion definition. The UI can let users select which events count as "conversions" rather than hardcoding this at data collection time.
+Event-level data for flexible conversion definition and device-level conversion analysis. The UI can let users select which events count as "conversions" rather than hardcoding this at data collection time.
 
-**Grain:** Date × Campaign × EventName
+**Grain:** Date × Campaign × Device × EventName
 
 | Column | Type | Description |
 |--------|------|-------------|
 | Date | Date | YYYY-MM-DD |
 | Campaign | String | Campaign name |
+| Device | String | desktop, mobile, tablet |
 | EventName | String | GA4 event name (e.g., page_view, scroll, form_submit, generate_lead) |
 | EventCount | Number | Number of times event fired |
 
-**Estimated rows (7 years):** ~20,000-40,000 (depends on number of event types)
+**Note:** Device dimension added per ADR-014 to enable device-level conversion analysis (e.g., "Do mobile users convert better than desktop?").
+
+**Estimated rows (7 years):** ~60,000-120,000 (depends on number of event types)
 
 #### Sheet: `Raw_Ads_Keywords`
 
@@ -311,57 +314,100 @@ Campaign-level metrics by country. Separate from Raw_Ads_Daily due to Google Ads
 
 ### Summary Sheets (Dashboard Source)
 
-These sheets are pre-aggregated for fast dashboard queries. Recomputed nightly.
+These sheets are pre-aggregated for fast dashboard queries. Recomputed nightly at 5 AM.
+
+**Architecture Decision:** We use three summary tables to avoid data redundancy issues:
+- **Summary_Monthly** - Ads + GA4 Sessions joined at Campaign × Device level
+- **Summary_Events** - Event counts at Campaign × Device × EventName level (for flexible conversion selection)
+- **Summary_Campaigns** - Campaign totals with JSON for event aggregates
+
+This separation exists because GA4 doesn't have NetworkType dimension. Rather than repeat GA4 metrics across NetworkType rows (which would cause confusion and potential triple-counting), we aggregate Ads data by Campaign × Device (using CampaignType for SEARCH vs DISPLAY analysis instead of NetworkType).
 
 #### Sheet: `Summary_Monthly`
 
 Monthly aggregates for time-based comparisons (YoY, MoM).
 
-**Grain:** YearMonth × Campaign × Device × NetworkType
+**Grain:** YearMonth × Campaign × Device
 
 | Column | Type | Description |
 |--------|------|-------------|
 | YearMonth | String | YYYY-MM format |
 | CampaignId | String | Campaign ID |
 | CampaignName | String | Campaign name |
-| CampaignType | String | Campaign type |
+| CampaignType | String | SEARCH, DISPLAY, VIDEO (use for network analysis) |
 | Device | String | DESKTOP, MOBILE, TABLET |
-| NetworkType | String | SEARCH, DISPLAY, etc. |
 | **Ads Metrics** | | |
-| Ads_Cost | Number | Total spend |
-| Ads_Clicks | Number | Total clicks |
-| Ads_Impressions | Number | Total impressions |
-| Ads_CTR | Number | Weighted CTR |
-| Ads_AvgCPC | Number | Weighted CPC |
-| Ads_Conversions | Number | Total conversions |
-| **GA4 Metrics** | | |
-| GA4_Sessions | Number | Total sessions |
-| GA4_Users | Number | Total users |
-| GA4_EngagedSessions | Number | Total engaged sessions |
-| GA4_Conversions | Number | Total conversions |
-| **Calculated** | | |
-| CostPerSession | Number | Ads_Cost / GA4_Sessions |
-| CostPerGAConversion | Number | Ads_Cost / GA4_Conversions |
+| Cost | Number | Total spend |
+| Clicks | Number | Total clicks |
+| Impressions | Number | Total impressions |
+| AdsConversions | Number | Google Ads tracked conversions |
+| **GA4 Session Metrics** | | |
+| Sessions | Number | Total sessions |
+| Users | Number | Total users |
+| NewUsers | Number | First-time visitors |
+| EngagedSessions | Number | Sessions with engagement |
 
-**Note on GA4 join:** GA4 metrics are aggregated at Campaign × Device level (no NetworkType). In this sheet, GA4 metrics are repeated across NetworkType rows within the same Campaign × Device × YearMonth group.
+**Note:** NetworkType removed from grain. Use CampaignType for SEARCH vs DISPLAY analysis. This enables clean Ads + GA4 join without redundancy.
 
-**Estimated rows:** ~4,000 (84 months × ~5 campaigns × 3 devices × 3 networks)
+**Dashboard calculates:** CTR, AvgCPC, BounceRate, CostPerSession, CostPerEngagedSession at query time.
+
+**Estimated rows:** ~2,500 (84 months × ~10 campaigns × 3 devices)
+
+#### Sheet: `Summary_Events`
+
+Monthly event counts for flexible conversion definition. Dashboard queries this to calculate cost-per-conversion based on user-selected events.
+
+**Grain:** YearMonth × Campaign × Device × EventName
+
+| Column | Type | Description |
+|--------|------|-------------|
+| YearMonth | String | YYYY-MM format |
+| CampaignId | String | Campaign ID |
+| CampaignName | String | Campaign name |
+| Device | String | DESKTOP, MOBILE, TABLET |
+| EventName | String | page_view, scroll, form_submit, etc. |
+| EventCount | Number | Total occurrences |
+
+**Dashboard flow:**
+1. Query Summary_Monthly for Cost by Campaign × Device × YearMonth
+2. Query Summary_Events for EventCount, filtered by user-selected events (e.g., form_submit + generate_lead)
+3. Join on Campaign × Device × YearMonth
+4. Calculate: CostPerConversion = Cost / SUM(selected EventCounts)
+
+**Estimated rows:** ~7,500 (84 months × ~10 campaigns × 3 devices × ~3 key events)
 
 #### Sheet: `Summary_Campaigns`
 
 Campaign-level totals for quick reference (campaign picker, overall stats).
 
+**Grain:** One row per Campaign
+
 | Column | Type | Description |
 |--------|------|-------------|
 | CampaignId | String | Campaign ID |
 | CampaignName | String | Campaign name |
-| CampaignType | String | Campaign type |
-| Status | String | Current status |
-| TotalCost_AllTime | Number | Lifetime spend |
-| TotalCost_YTD | Number | Year-to-date spend |
-| TotalCost_Last12Mo | Number | Rolling 12 months |
-| FirstDate | Date | First data point |
-| LastDate | Date | Most recent data |
+| CampaignType | String | SEARCH, DISPLAY, VIDEO |
+| Status | String | Current status (ENABLED, PAUSED, REMOVED) |
+| FirstDate | String | First date with data |
+| LastDate | String | Most recent date with data |
+| **All-Time Totals** | | |
+| AllTime_Cost | Number | Lifetime spend |
+| AllTime_Clicks | Number | Lifetime clicks |
+| AllTime_Impressions | Number | Lifetime impressions |
+| AllTime_AdsConversions | Number | Lifetime Ads conversions |
+| AllTime_Sessions | Number | Lifetime sessions |
+| AllTime_EngagedSessions | Number | Lifetime engaged sessions |
+| AllTime_EventCounts | JSON | `{"page_view":15000,"form_submit":500,...}` |
+| **Last 12 Months** | | |
+| L12M_Cost | Number | Rolling 12 months spend |
+| L12M_Clicks | Number | Rolling 12 months clicks |
+| L12M_Impressions | Number | Rolling 12 months impressions |
+| L12M_AdsConversions | Number | Rolling 12 months Ads conversions |
+| L12M_Sessions | Number | Rolling 12 months sessions |
+| L12M_EngagedSessions | Number | Rolling 12 months engaged sessions |
+| L12M_EventCounts | JSON | `{"page_view":5000,"form_submit":200,...}` |
+
+**Note:** JSON columns store event totals for quick campaign-level conversion overview. YTD can be derived from Summary_Monthly.
 
 **Estimated rows:** ~10-20 (one per campaign)
 

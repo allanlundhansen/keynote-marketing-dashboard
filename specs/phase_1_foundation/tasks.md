@@ -65,23 +65,30 @@
 - [x] Backfill historical GA4 data (2022-2026)
 - [x] Schedule daily pull at 4 AM
 
+### Device Dimension in Events (ADR-014)
+
+- [ ] Update `fetchGA4Events()` to include `deviceCategory` dimension
+- [ ] Update `HEADERS_EVENTS` constant to include Device
+- [ ] Update `processEventsResponse()` to include Device
+- [ ] Clear existing Raw_GA4_Events spreadsheet data
+- [ ] Re-backfill Events data for 2022-2026
+
 ### AggregationService.js (NEW)
 
 - [ ] Create new service for nightly aggregation
-- [ ] Implement `aggregateMonthly()` - aggregate raw data by YearMonth × Campaign × Device × NetworkType
-- [ ] Implement `aggregateCampaigns()` - compute campaign totals (all-time, YTD, 12mo)
-- [ ] Implement `joinGA4Data()` - merge GA4 metrics at Campaign × Device level
+- [ ] Implement `aggregateMonthly()` - aggregate Ads + Sessions by YearMonth × Campaign × Device
+- [ ] Implement `aggregateEvents()` - aggregate Events by YearMonth × Campaign × Device × EventName
+- [ ] Implement `aggregateCampaigns()` - compute campaign totals with JSON event counts
 - [ ] Implement `nightlyAggregation()` - main entry point
-- [ ] Handle GA4 join limitation (repeat GA4 metrics across NetworkType rows)
 - [ ] Set up time-driven trigger for 5 AM
 
 ### SheetManager.js
 
 - [x] Basic sheet operations (find, create, append)
-- [ ] Update `setupSheets()` for new 10-sheet structure:
+- [ ] Update `setupSheets()` for new 11-sheet structure:
   - Raw Ads: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`
   - Raw GA4: `Raw_GA4_Sessions`, `Raw_GA4_Pages`, `Raw_GA4_Events`
-  - Summary: `Summary_Monthly`, `Summary_Campaigns`
+  - Summary: `Summary_Monthly`, `Summary_Events`, `Summary_Campaigns`
   - System: `System_Logs`
 - [ ] Add sheet-specific header definitions
 - [ ] Add `overwriteSheet()` method for summary sheets

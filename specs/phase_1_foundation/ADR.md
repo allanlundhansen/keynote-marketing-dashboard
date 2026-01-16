@@ -306,3 +306,54 @@ We filter to campaign traffic only (exclude `(direct)` and `(not set)` sessions)
 - 3 separate API calls per daily fetch
 - Dashboard aggregation logic becomes more complex
 - Joins across tables required for some analyses
+
+## ADR-014: Device Dimension in GA4 Events
+
+- **Status**: Accepted
+
+### Context
+
+The initial GA4 Events implementation stored data at `Date × Campaign × EventName` grain without Device dimension. During planning for the aggregation service, we realized this prevents answering a key question: **"Do mobile users convert better than desktop users?"**
+
+Without Device in Events:
+- Summary_Events would be at Campaign × EventName level only
+- Cannot join cleanly with Summary_Monthly (which is at Campaign × Device level)
+- Cost-per-conversion analysis cannot be broken down by device
+- Missed opportunity for actionable insights (e.g., "mobile has high cost but low conversions - optimize mobile landing page")
+
+### Decision
+
+Add `deviceCategory` dimension to the GA4 Events fetch. The new grain becomes `Date × Campaign × Device × EventName`.
+
+This requires:
+1. Updating `AnalyticsService.js` to include `deviceCategory` in Events fetch
+2. Clearing existing `Raw_GA4_Events` data
+3. Re-backfilling Events data for 2022-2026
+
+### Data Volume Impact
+
+Adding Device roughly triples the row count:
+- Before: ~20,000-40,000 rows (7 years)
+- After: ~60,000-120,000 rows (7 years)
+
+This is well within the 10M cell limit for a single spreadsheet (~600K cells with 5 columns).
+
+### Consequences
+
+**Positive:**
+- Can answer "Do mobile users convert better than desktop?"
+- Summary_Events joins cleanly with Summary_Monthly on Campaign × Device
+- Enables device-level cost-per-conversion analysis
+- More actionable insights for optimization
+
+**Negative:**
+- ~3x more rows in Raw_GA4_Events
+- Requires re-backfill of Events data (one-time effort)
+- Slightly longer daily fetch time
+
+### Alternatives Considered
+
+| Alternative | Why Rejected |
+|-------------|--------------|
+| Accept limitation, add Device later | Delays valuable insight; better to fix now while we're building aggregation |
+| Infer Device from Sessions data | Not accurate; event counts by device can't be derived from session-level data |

@@ -23,7 +23,7 @@ const HEADERS_PAGES = [
 ];
 
 const HEADERS_EVENTS = [
-  'Date', 'Campaign', 'EventName', 'EventCount'
+  'Date', 'Campaign', 'Device', 'EventName', 'EventCount'
 ];
 
 const AnalyticsService = {
@@ -248,6 +248,7 @@ const AnalyticsService = {
       dimensions: [
         { name: 'date' },
         { name: 'sessionCampaignName' },
+        { name: 'deviceCategory' },
         { name: 'eventName' }
       ],
       metrics: [
@@ -289,7 +290,8 @@ const AnalyticsService = {
       return [
         this.formatDate(dims[0].value),           // Date
         dims[1].value || '(not set)',             // Campaign
-        dims[2].value || 'unknown',               // EventName
+        dims[2].value || 'unknown',               // Device
+        dims[3].value || 'unknown',               // EventName
         parseFloat(mets[0].value) || 0            // EventCount
       ];
     });

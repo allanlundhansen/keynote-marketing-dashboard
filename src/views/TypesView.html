@@ -1,0 +1,12 @@
+<script>
+const TypesView = {
+  inject: ['store', 'storeComputed'],
+  template: `
+    <div class="card">
+      <h2>Campaign Types</h2>
+      <p>Campaign type breakdown will be implemented here.</p>
+      <p v-if="store.ui.initialized">Types: {{ storeComputed.uniqueCampaignTypes().join(', ') }}</p>
+    </div>
+  `
+};
+</script>

@@ -1,0 +1,32 @@
+<script>
+const OverviewView = {
+  inject: ['store', 'storeActions', 'storeComputed'],
+  template: `
+    <div>
+      <div v-if="store.ui.isLoading" class="loading-container">
+        <ProgressSpinner />
+      </div>
+      <div v-else-if="store.ui.error" class="error-container">
+        <p>{{ store.ui.error }}</p>
+        <Button label="Retry" @click="retry" />
+      </div>
+      <div v-else class="card">
+        <h2>Overview</h2>
+        <p>Data loaded: {{ store.data.monthly.length }} monthly rows, {{ store.data.events.length }} event rows</p>
+        <p>Date range: {{ store.dateRange.from }} to {{ store.dateRange.to }}</p>
+        <p>Filtered rows: {{ storeComputed.filteredMonthly().length }}</p>
+        <p>Available campaigns: {{ storeComputed.uniqueCampaigns().length }}</p>
+        <p>Available devices: {{ storeComputed.uniqueDevices().join(', ') }}</p>
+        <p>Available campaign types: {{ storeComputed.uniqueCampaignTypes().join(', ') }}</p>
+        <p>Selected conversion events: {{ store.conversions.selectedEvents.join(', ') }}</p>
+        <p>Total conversions (filtered): {{ storeComputed.totalConversions() }}</p>
+      </div>
+    </div>
+  `,
+  methods: {
+    retry() {
+      this.storeActions.loadDashboardData();
+    }
+  }
+};
+</script>

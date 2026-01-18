@@ -28,21 +28,32 @@ function include(filename) {
  * @returns {Object} { monthly: [...], events: [...], lastUpdated: timestamp }
  */
 function getDashboardData() {
+  Logger.log('getDashboardData() called');
+  Logger.log('Dashboard spreadsheet ID: ' + Config.SPREADSHEETS.DASHBOARD);
+
   const dashboardSpreadsheet = SpreadsheetApp.openById(Config.SPREADSHEETS.DASHBOARD);
+  Logger.log('Spreadsheet opened: ' + dashboardSpreadsheet.getName());
 
   // Read Summary_Monthly
   const monthlySheet = dashboardSpreadsheet.getSheetByName(Config.SHEETS.SUMMARY_MONTHLY);
+  Logger.log('Monthly sheet found: ' + (monthlySheet ? 'YES' : 'NO'));
   const monthlyData = sheetToObjects(monthlySheet);
+  Logger.log('Monthly rows: ' + monthlyData.length);
 
   // Read Summary_Events
   const eventsSheet = dashboardSpreadsheet.getSheetByName(Config.SHEETS.SUMMARY_EVENTS);
+  Logger.log('Events sheet found: ' + (eventsSheet ? 'YES' : 'NO'));
   const eventsData = sheetToObjects(eventsSheet);
+  Logger.log('Events rows: ' + eventsData.length);
 
-  return {
+  const result = {
     monthly: monthlyData,
     events: eventsData,
-    lastUpdated: new Date().toISOString()  // TODO: Get actual last aggregation time
+    lastUpdated: new Date().toISOString()
   };
+
+  Logger.log('Returning result with ' + result.monthly.length + ' monthly, ' + result.events.length + ' events');
+  return result;
 }
 
 /**
@@ -206,7 +217,12 @@ function sheetToObjects(sheet) {
   return rows.map(row => {
     const obj = {};
     headers.forEach((header, i) => {
-      obj[header] = row[i];
+      let value = row[i];
+      // Convert Date objects to ISO strings for serialization
+      if (value instanceof Date) {
+        value = value.toISOString();
+      }
+      obj[header] = value;
     });
     return obj;
   });

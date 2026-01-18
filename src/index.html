@@ -14,7 +14,6 @@
     <style>
       /* Design Tokens */
       :root {
-        /* Colors - Professional blue, not that purple nonsense */
         --color-primary: #2563EB;
         --color-primary-dark: #1D4ED8;
         --color-success: #10B981;
@@ -26,14 +25,12 @@
         --color-card: #FFFFFF;
         --color-border: #E5E7EB;
 
-        /* Spacing */
         --space-xs: 4px;
         --space-sm: 8px;
         --space-md: 16px;
         --space-lg: 24px;
         --space-xl: 32px;
 
-        /* Typography */
         --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         --font-size-sm: 12px;
         --font-size-md: 14px;
@@ -41,20 +38,15 @@
         --font-size-xl: 20px;
         --font-size-2xl: 24px;
 
-        /* Shadows */
         --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
         --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
 
-        /* Borders */
         --radius-sm: 4px;
         --radius-md: 8px;
         --radius-lg: 12px;
       }
 
-      /* Base Styles */
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
       body {
         font-family: var(--font-family);
@@ -66,7 +58,6 @@
         min-height: 100vh;
       }
 
-      /* App Layout */
       .app-container {
         min-height: 100vh;
         display: flex;
@@ -110,16 +101,14 @@
 
       .app-nav a {
         display: block;
-        padding: var(--space-md) var(--space-md);
+        padding: var(--space-md);
         color: var(--color-text-muted);
         text-decoration: none;
         border-bottom: 2px solid transparent;
         transition: all 0.2s ease;
       }
 
-      .app-nav a:hover {
-        color: var(--color-primary);
-      }
+      .app-nav a:hover { color: var(--color-primary); }
 
       .app-nav a.router-link-active {
         color: var(--color-primary);
@@ -134,7 +123,6 @@
         width: 100%;
       }
 
-      /* Card Component */
       .card {
         background: var(--color-card);
         border-radius: var(--radius-md);
@@ -143,7 +131,6 @@
         border: 1px solid var(--color-border);
       }
 
-      /* Loading State */
       .loading-container {
         display: flex;
         justify-content: center;
@@ -152,7 +139,6 @@
         color: var(--color-text-muted);
       }
 
-      /* Error State */
       .error-container {
         background: #FEF2F2;
         border: 1px solid #FECACA;
@@ -161,35 +147,28 @@
         color: var(--color-error);
       }
 
-      /* Mobile Responsive */
       @media (max-width: 768px) {
         .app-header {
           flex-direction: column;
           gap: var(--space-sm);
           text-align: center;
         }
-
         .app-nav ul {
           flex-wrap: wrap;
           justify-content: center;
         }
-
-        .app-main {
-          padding: var(--space-md);
-        }
+        .app-main { padding: var(--space-md); }
       }
     </style>
   </head>
   <body>
     <div id="app">
       <div class="app-container">
-        <!-- Header -->
         <header class="app-header">
           <h1>Marketing Dashboard</h1>
           <span class="data-freshness">Data as of: {{ dataFreshness }}</span>
         </header>
 
-        <!-- Navigation -->
         <nav class="app-nav">
           <ul>
             <li><router-link to="/overview">Overview</router-link></li>
@@ -202,7 +181,6 @@
           </ul>
         </nav>
 
-        <!-- Main Content -->
         <main class="app-main">
           <router-view></router-view>
         </main>
@@ -211,17 +189,12 @@
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-
     <!-- Vue Router -->
     <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
-
-    <!-- Chart.js (required by PrimeVue Chart) -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- PrimeVue Core -->
+    <!-- PrimeVue -->
     <script src="https://unpkg.com/primevue@3/core/core.min.js"></script>
-
-    <!-- PrimeVue Components (loaded as needed) -->
     <script src="https://unpkg.com/primevue@3/datatable/datatable.min.js"></script>
     <script src="https://unpkg.com/primevue@3/column/column.min.js"></script>
     <script src="https://unpkg.com/primevue@3/dropdown/dropdown.min.js"></script>
@@ -235,78 +208,19 @@
     <script src="https://unpkg.com/primevue@3/tabview/tabview.min.js"></script>
     <script src="https://unpkg.com/primevue@3/tabpanel/tabpanel.min.js"></script>
 
+    <!-- Store -->
+    <?!= include('store') ?>
+
+    <!-- Views -->
+    <?!= include('views/OverviewView') ?>
+    <?!= include('views/TrendsView') ?>
+    <?!= include('views/CampaignsView') ?>
+    <?!= include('views/DevicesView') ?>
+    <?!= include('views/TypesView') ?>
+    <?!= include('views/CountriesView') ?>
+    <?!= include('views/ConversionsView') ?>
+
     <script>
-      // ============================================================
-      // Placeholder View Components (to be replaced in later tasks)
-      // ============================================================
-
-      const OverviewView = {
-        template: `
-          <div class="card">
-            <h2>Overview</h2>
-            <p>Dashboard overview with summary cards will be implemented here.</p>
-          </div>
-        `
-      };
-
-      const TrendsView = {
-        template: `
-          <div class="card">
-            <h2>Trends</h2>
-            <p>Time series charts will be implemented here.</p>
-          </div>
-        `
-      };
-
-      const CampaignsView = {
-        template: `
-          <div class="card">
-            <h2>Campaigns</h2>
-            <p>Campaign performance table will be implemented here.</p>
-          </div>
-        `
-      };
-
-      const DevicesView = {
-        template: `
-          <div class="card">
-            <h2>Devices</h2>
-            <p>Device breakdown will be implemented here.</p>
-          </div>
-        `
-      };
-
-      const TypesView = {
-        template: `
-          <div class="card">
-            <h2>Campaign Types</h2>
-            <p>Campaign type breakdown will be implemented here.</p>
-          </div>
-        `
-      };
-
-      const CountriesView = {
-        template: `
-          <div class="card">
-            <h2>Countries</h2>
-            <p>Geographic analysis will be implemented here.</p>
-          </div>
-        `
-      };
-
-      const ConversionsView = {
-        template: `
-          <div class="card">
-            <h2>Conversions</h2>
-            <p>Conversion event configuration will be implemented here.</p>
-          </div>
-        `
-      };
-
-      // ============================================================
-      // Vue Router Configuration
-      // ============================================================
-
       const routes = [
         { path: '/', redirect: '/overview' },
         { path: '/overview', component: OverviewView, name: 'overview' },
@@ -323,26 +237,37 @@
         routes
       });
 
-      // ============================================================
-      // Vue App
-      // ============================================================
-
       const app = Vue.createApp({
         data() {
-          return {
-            dataFreshness: 'Loading...'
-          };
+          return { store, storeActions, storeComputed };
         },
-        mounted() {
-          // TODO: Fetch actual timestamp from server
-          this.dataFreshness = new Date().toLocaleDateString();
+        provide() {
+          return { store, storeActions, storeComputed };
+        },
+        computed: {
+          dataFreshness() {
+            if (store.ui.isLoading) return 'Loading...';
+            if (store.data.lastUpdated) {
+              return new Date(store.data.lastUpdated).toLocaleString();
+            }
+            return 'Unknown';
+          }
+        },
+        async mounted() {
+          storeActions.parseUrlToState(this.$route.query);
+          try {
+            await Promise.all([
+              storeActions.loadDashboardData(),
+              storeActions.loadCampaignList()
+            ]);
+            console.log('Dashboard data loaded:', store.data.monthly.length, 'monthly rows');
+          } catch (error) {
+            console.error('Failed to load initial data:', error);
+          }
         }
       });
 
-      // Register PrimeVue
       app.use(primevue.config.default);
-
-      // Register PrimeVue components globally
       app.component('DataTable', primevue.datatable);
       app.component('Column', primevue.column);
       app.component('Dropdown', primevue.dropdown);
@@ -356,10 +281,15 @@
       app.component('TabView', primevue.tabview);
       app.component('TabPanel', primevue.tabpanel);
 
-      // Use router
       app.use(router);
 
-      // Mount app
+      router.beforeEach((to, from, next) => {
+        if (to.query && Object.keys(to.query).length > 0) {
+          storeActions.parseUrlToState(to.query);
+        }
+        next();
+      });
+
       app.mount('#app');
     </script>
   </body>

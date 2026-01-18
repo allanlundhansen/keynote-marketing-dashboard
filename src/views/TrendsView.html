@@ -1,0 +1,12 @@
+<script>
+const TrendsView = {
+  inject: ['store', 'storeComputed'],
+  template: `
+    <div class="card">
+      <h2>Trends</h2>
+      <p>Time series charts will be implemented here.</p>
+      <p v-if="store.ui.initialized">Filtered data points: {{ storeComputed.filteredMonthly().length }}</p>
+    </div>
+  `
+};
+</script>

@@ -35,17 +35,19 @@
 ## 3. State Management
 
 ### 3.1 Global State
-- [ ] Create reactive state object with `Vue.reactive()`
-- [ ] Define state shape: `{ filters, dateRange, data, loading, error }`
-- [ ] Implement filter state: `{ campaigns: [], devices: [], campaignTypes: [] }`
-- [ ] Implement date range state: `{ from: '2025-01', to: '2025-12', comparison: false }`
-- [ ] Implement conversion selection state (load from localStorage)
+- [x] Create reactive state object with `Vue.reactive()`
+- [x] Define state shape: `{ filters, dateRange, data, loading, error }`
+- [x] Implement filter state: `{ campaigns: [], devices: [], campaignTypes: [] }`
+- [x] Implement date range state: `{ from: '2025-01', to: '2025-12', comparison: false }`
+- [x] Implement conversion selection state (load from localStorage)
 
 ### 3.2 URL ↔ State Synchronization
-- [ ] Sync filters to URL query params on change
-- [ ] Parse URL query params on app load
-- [ ] Handle browser back/forward navigation
-- [ ] Test: change filter → URL updates → refresh → filter restored
+- [x] Sync filters to URL query params on change
+- [x] Parse URL query params on app load
+- [x] Handle browser back/forward navigation
+- [x] Test: change filter → URL updates → refresh → filter restored
+
+> **Note:** State management implemented in `store.html`. Date objects from sheets must be serialized to strings for `google.script.run` to work (see `sheetToObjects` in Code.js).
 
 ## 4. Core Components
 

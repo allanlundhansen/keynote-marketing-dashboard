@@ -1,0 +1,12 @@
+<script>
+const DevicesView = {
+  inject: ['store', 'storeComputed'],
+  template: `
+    <div class="card">
+      <h2>Devices</h2>
+      <p>Device breakdown will be implemented here.</p>
+      <p v-if="store.ui.initialized">Devices: {{ storeComputed.uniqueDevices().join(', ') }}</p>
+    </div>
+  `
+};
+</script>

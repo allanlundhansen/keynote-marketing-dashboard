@@ -1,0 +1,300 @@
+<script>
+// ============================================================
+// Global State Management
+// ============================================================
+
+// Get current year-month in YYYY-MM format
+function getCurrentYearMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Get year-month from X months ago
+function getYearMonthAgo(monthsAgo) {
+  const now = new Date();
+  now.setMonth(now.getMonth() - monthsAgo);
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Load conversion selection from localStorage
+function loadConversionSelection() {
+  try {
+    const saved = localStorage.getItem('selectedConversionEvents');
+    return saved ? JSON.parse(saved) : ['form_submit', 'keynote_form_submission'];
+  } catch (e) {
+    return ['form_submit', 'keynote_form_submission'];
+  }
+}
+
+// Save conversion selection to localStorage
+function saveConversionSelection(events) {
+  try {
+    localStorage.setItem('selectedConversionEvents', JSON.stringify(events));
+  } catch (e) {
+    console.warn('Failed to save conversion selection to localStorage:', e);
+  }
+}
+
+// Global reactive store
+const store = Vue.reactive({
+  // Data from server (populated on load)
+  data: {
+    monthly: [],           // Summary_Monthly rows
+    events: [],            // Summary_Events rows
+    campaigns: [],         // Summary_Campaigns rows
+    lastUpdated: null      // Timestamp of last data refresh
+  },
+
+  // Filter selections (synced with URL)
+  filters: {
+    campaigns: [],         // Selected campaign IDs (empty = all)
+    devices: [],           // Selected devices: DESKTOP, MOBILE, TABLET
+    campaignTypes: []      // Selected types: SEARCH, DISPLAY, etc.
+  },
+
+  // Date range (synced with URL)
+  dateRange: {
+    from: getYearMonthAgo(11),  // Default: 12 months ago
+    to: getCurrentYearMonth(),   // Default: current month
+    comparison: false            // Compare to same period last year
+  },
+
+  // Conversion configuration (persisted to localStorage)
+  conversions: {
+    selectedEvents: loadConversionSelection(),
+    availableEvents: []    // Populated from Summary_Events unique event names
+  },
+
+  // UI state
+  ui: {
+    isLoading: false,
+    error: null,
+    initialized: false     // True after initial data load
+  }
+});
+
+// ============================================================
+// Store Actions
+// ============================================================
+
+const storeActions = {
+  // Load initial dashboard data
+  async loadDashboardData() {
+    store.ui.isLoading = true;
+    store.ui.error = null;
+
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler((result) => {
+          console.log('getDashboardData result:', result);
+          console.log('result type:', typeof result);
+          store.data.monthly = result.monthly || [];
+          store.data.events = result.events || [];
+          store.data.lastUpdated = result.lastUpdated;
+
+          // Extract unique event names for conversion selector
+          const eventNames = new Set();
+          store.data.events.forEach(row => {
+            if (row.EventName) eventNames.add(row.EventName);
+          });
+          store.conversions.availableEvents = Array.from(eventNames).sort();
+
+          store.ui.isLoading = false;
+          store.ui.initialized = true;
+          resolve(result);
+        })
+        .withFailureHandler((error) => {
+          console.error('getDashboardData error:', error);
+          store.ui.error = error.message || 'Failed to load dashboard data';
+          store.ui.isLoading = false;
+          reject(error);
+        })
+        .getDashboardData();
+    });
+  },
+
+  // Load campaign list for filters
+  async loadCampaignList() {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler((result) => {
+          console.log('getCampaignList result:', result);
+          store.data.campaigns = result.campaigns || [];
+          resolve(result);
+        })
+        .withFailureHandler((error) => {
+          console.error('getCampaignList error:', error);
+          reject(error);
+        })
+        .getCampaignList();
+    });
+  },
+
+  // Update filters and sync to URL
+  setFilters(newFilters) {
+    Object.assign(store.filters, newFilters);
+    this.syncFiltersToUrl();
+  },
+
+  // Update date range and sync to URL
+  setDateRange(newRange) {
+    Object.assign(store.dateRange, newRange);
+    this.syncFiltersToUrl();
+  },
+
+  // Update conversion selection and persist to localStorage
+  setConversionEvents(events) {
+    store.conversions.selectedEvents = events;
+    saveConversionSelection(events);
+  },
+
+  // Sync current state to URL query params
+  syncFiltersToUrl() {
+    const query = {};
+
+    // Date range
+    if (store.dateRange.from) query.from = store.dateRange.from;
+    if (store.dateRange.to) query.to = store.dateRange.to;
+    if (store.dateRange.comparison) query.compare = '1';
+
+    // Filters (only if not empty)
+    if (store.filters.campaigns.length > 0) {
+      query.campaigns = store.filters.campaigns.join(',');
+    }
+    if (store.filters.devices.length > 0) {
+      query.devices = store.filters.devices.join(',');
+    }
+    if (store.filters.campaignTypes.length > 0) {
+      query.types = store.filters.campaignTypes.join(',');
+    }
+
+    // Update URL without triggering navigation
+    const currentRoute = router.currentRoute.value;
+    router.replace({ path: currentRoute.path, query });
+  },
+
+  // Parse URL query params and update state
+  parseUrlToState(query) {
+    // Date range
+    if (query.from) store.dateRange.from = query.from;
+    if (query.to) store.dateRange.to = query.to;
+    store.dateRange.comparison = query.compare === '1';
+
+    // Filters
+    if (query.campaigns) {
+      store.filters.campaigns = query.campaigns.split(',').filter(Boolean);
+    } else {
+      store.filters.campaigns = [];
+    }
+    if (query.devices) {
+      store.filters.devices = query.devices.split(',').filter(Boolean);
+    } else {
+      store.filters.devices = [];
+    }
+    if (query.types) {
+      store.filters.campaignTypes = query.types.split(',').filter(Boolean);
+    } else {
+      store.filters.campaignTypes = [];
+    }
+  },
+
+  // Clear all filters
+  clearFilters() {
+    store.filters.campaigns = [];
+    store.filters.devices = [];
+    store.filters.campaignTypes = [];
+    this.syncFiltersToUrl();
+  }
+};
+
+// ============================================================
+// Computed Helpers (for use in components)
+// ============================================================
+
+const storeComputed = {
+  // Filter monthly data by current filters and date range
+  filteredMonthly() {
+    return store.data.monthly.filter(row => {
+      // Date range filter
+      if (row.YearMonth < store.dateRange.from) return false;
+      if (row.YearMonth > store.dateRange.to) return false;
+
+      // Campaign filter
+      if (store.filters.campaigns.length > 0) {
+        if (!store.filters.campaigns.includes(String(row.CampaignId))) return false;
+      }
+
+      // Device filter
+      if (store.filters.devices.length > 0) {
+        if (!store.filters.devices.includes(row.Device)) return false;
+      }
+
+      // Campaign type filter
+      if (store.filters.campaignTypes.length > 0) {
+        if (!store.filters.campaignTypes.includes(row.CampaignType)) return false;
+      }
+
+      return true;
+    });
+  },
+
+  // Filter events data by current filters and date range
+  filteredEvents() {
+    return store.data.events.filter(row => {
+      // Date range filter
+      if (row.YearMonth < store.dateRange.from) return false;
+      if (row.YearMonth > store.dateRange.to) return false;
+
+      // Campaign filter
+      if (store.filters.campaigns.length > 0) {
+        if (!store.filters.campaigns.includes(String(row.CampaignId))) return false;
+      }
+
+      // Device filter
+      if (store.filters.devices.length > 0) {
+        if (!store.filters.devices.includes(row.Device)) return false;
+      }
+
+      // Only include selected conversion events
+      if (!store.conversions.selectedEvents.includes(row.EventName)) return false;
+
+      return true;
+    });
+  },
+
+  // Calculate total conversions from filtered events
+  totalConversions() {
+    return this.filteredEvents().reduce((sum, row) => sum + (row.EventCount || 0), 0);
+  },
+
+  // Get unique values for filter dropdowns
+  uniqueCampaigns() {
+    const campaigns = new Map();
+    store.data.monthly.forEach(row => {
+      if (!campaigns.has(row.CampaignId)) {
+        campaigns.set(row.CampaignId, {
+          id: String(row.CampaignId),
+          name: row.CampaignName
+        });
+      }
+    });
+    return Array.from(campaigns.values()).sort((a, b) => a.name.localeCompare(b.name));
+  },
+
+  uniqueDevices() {
+    const devices = new Set();
+    store.data.monthly.forEach(row => {
+      if (row.Device) devices.add(row.Device);
+    });
+    return Array.from(devices).sort();
+  },
+
+  uniqueCampaignTypes() {
+    const types = new Set();
+    store.data.monthly.forEach(row => {
+      if (row.CampaignType) types.add(row.CampaignType);
+    });
+    return Array.from(types).sort();
+  }
+};
+</script>

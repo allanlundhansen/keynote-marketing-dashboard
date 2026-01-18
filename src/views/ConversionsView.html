@@ -1,0 +1,17 @@
+<script>
+const ConversionsView = {
+  inject: ['store', 'storeActions'],
+  template: `
+    <div class="card">
+      <h2>Conversions</h2>
+      <p>Conversion event configuration will be implemented here.</p>
+      <p v-if="store.ui.initialized">
+        Available events: {{ store.conversions.availableEvents.join(', ') }}
+      </p>
+      <p v-if="store.ui.initialized">
+        Selected events: {{ store.conversions.selectedEvents.join(', ') }}
+      </p>
+    </div>
+  `
+};
+</script>

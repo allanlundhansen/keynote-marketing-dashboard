@@ -1,0 +1,12 @@
+<script>
+const CampaignsView = {
+  inject: ['store', 'storeComputed'],
+  template: `
+    <div class="card">
+      <h2>Campaigns</h2>
+      <p>Campaign performance table will be implemented here.</p>
+      <p v-if="store.ui.initialized">Total campaigns: {{ storeComputed.uniqueCampaigns().length }}</p>
+    </div>
+  `
+};
+</script>

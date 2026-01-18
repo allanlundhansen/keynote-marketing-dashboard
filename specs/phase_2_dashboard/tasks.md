@@ -3,17 +3,17 @@
 ## 1. Project Setup
 
 ### 1.1 File Structure
-- [ ] Create `index.html` with base HTML structure
-- [ ] Add CDN script tags (Vue 3, Vue Router, PrimeVue, Chart.js)
-- [ ] Add PrimeVue CSS theme link
-- [ ] Create basic CSS file or `<style>` section with design tokens
+- [x] Create `index.html` with base HTML structure
+- [x] Add CDN script tags (Vue 3, Vue Router, PrimeVue, Chart.js)
+- [x] Add PrimeVue CSS theme link
+- [x] Create basic CSS file or `<style>` section with design tokens
 
 ### 1.2 Vue Application Bootstrap
-- [ ] Initialize Vue app with `Vue.createApp()`
-- [ ] Set up Vue Router with hash mode
-- [ ] Register PrimeVue components globally
-- [ ] Create root App component with router-view
-- [ ] Verify basic app renders with "Hello World"
+- [x] Initialize Vue app with `Vue.createApp()`
+- [x] Set up Vue Router with hash mode
+- [x] Register PrimeVue components globally
+- [x] Create root App component with router-view
+- [x] Verify basic app renders with placeholder views
 
 ## 2. Backend API Layer (Apps Script)
 

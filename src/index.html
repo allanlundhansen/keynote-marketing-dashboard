@@ -5,127 +5,362 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Marketing Dashboard</title>
+
+    <!-- PrimeVue Theme & Icons -->
+    <link rel="stylesheet" href="https://unpkg.com/primevue@3/resources/themes/lara-light-blue/theme.css" />
+    <link rel="stylesheet" href="https://unpkg.com/primevue@3/resources/primevue.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/primeicons/primeicons.css" />
+
     <style>
+      /* Design Tokens */
       :root {
-        --primary: #2563eb;
-        --bg: #f8fafc;
-        --card-bg: #ffffff;
-        --text: #1e293b;
+        /* Colors - Professional blue, not that purple nonsense */
+        --color-primary: #2563EB;
+        --color-primary-dark: #1D4ED8;
+        --color-success: #10B981;
+        --color-warning: #F59E0B;
+        --color-error: #EF4444;
+        --color-text: #1F2937;
+        --color-text-muted: #6B7280;
+        --color-bg: #F9FAFB;
+        --color-card: #FFFFFF;
+        --color-border: #E5E7EB;
+
+        /* Spacing */
+        --space-xs: 4px;
+        --space-sm: 8px;
+        --space-md: 16px;
+        --space-lg: 24px;
+        --space-xl: 32px;
+
+        /* Typography */
+        --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-size-sm: 12px;
+        --font-size-md: 14px;
+        --font-size-lg: 16px;
+        --font-size-xl: 20px;
+        --font-size-2xl: 24px;
+
+        /* Shadows */
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+
+        /* Borders */
+        --radius-sm: 4px;
+        --radius-md: 8px;
+        --radius-lg: 12px;
       }
+
+      /* Base Styles */
+      * {
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        background-color: var(--bg);
-        color: var(--text);
+        font-family: var(--font-family);
+        font-size: var(--font-size-md);
+        background-color: var(--color-bg);
+        color: var(--color-text);
         margin: 0;
-        padding: 20px;
+        padding: 0;
+        min-height: 100vh;
       }
-      .container {
-        max-width: 1200px;
+
+      /* App Layout */
+      .app-container {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .app-header {
+        background: var(--color-card);
+        border-bottom: 1px solid var(--color-border);
+        padding: var(--space-md) var(--space-lg);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .app-header h1 {
+        margin: 0;
+        font-size: var(--font-size-xl);
+        color: var(--color-primary);
+      }
+
+      .app-header .data-freshness {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+      }
+
+      .app-nav {
+        background: var(--color-card);
+        border-bottom: 1px solid var(--color-border);
+        padding: 0 var(--space-lg);
+      }
+
+      .app-nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        gap: var(--space-sm);
+      }
+
+      .app-nav a {
+        display: block;
+        padding: var(--space-md) var(--space-md);
+        color: var(--color-text-muted);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+      }
+
+      .app-nav a:hover {
+        color: var(--color-primary);
+      }
+
+      .app-nav a.router-link-active {
+        color: var(--color-primary);
+        border-bottom-color: var(--color-primary);
+      }
+
+      .app-main {
+        flex: 1;
+        padding: var(--space-lg);
+        max-width: 1400px;
         margin: 0 auto;
+        width: 100%;
       }
-      .header {
-        margin-bottom: 30px;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-      }
+
+      /* Card Component */
       .card {
-        background: var(--card-bg);
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        background: var(--color-card);
+        border-radius: var(--radius-md);
+        padding: var(--space-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--color-border);
       }
-      .metric-value {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: var(--primary);
+
+      /* Loading State */
+      .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+        color: var(--color-text-muted);
       }
-      .metric-label {
-        color: #64748b;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+
+      /* Error State */
+      .error-container {
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        border-radius: var(--radius-md);
+        padding: var(--space-lg);
+        color: var(--color-error);
+      }
+
+      /* Mobile Responsive */
+      @media (max-width: 768px) {
+        .app-header {
+          flex-direction: column;
+          gap: var(--space-sm);
+          text-align: center;
+        }
+
+        .app-nav ul {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .app-main {
+          padding: var(--space-md);
+        }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <div class="header">
-        <h1>Marketing & Keynote Performance</h1>
-        <p>Real-time analytics for campaigns and bookings</p>
-      </div>
+    <div id="app">
+      <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+          <h1>Marketing Dashboard</h1>
+          <span class="data-freshness">Data as of: {{ dataFreshness }}</span>
+        </header>
 
-      <div class="grid">
-        <div class="card">
-          <div class="metric-label">Total Spend (Last 30 Days)</div>
-          <div class="metric-value" id="total-spend">Loading...</div>
-        </div>
-        <div class="card">
-          <div class="metric-label">Total Sessions</div>
-          <div class="metric-value" id="total-sessions">Loading...</div>
-        </div>
-        <div class="card">
-          <div class="metric-label">Conversions</div>
-          <div class="metric-value" id="total-conversions">Loading...</div>
-        </div>
-      </div>
+        <!-- Navigation -->
+        <nav class="app-nav">
+          <ul>
+            <li><router-link to="/overview">Overview</router-link></li>
+            <li><router-link to="/trends">Trends</router-link></li>
+            <li><router-link to="/campaigns">Campaigns</router-link></li>
+            <li><router-link to="/devices">Devices</router-link></li>
+            <li><router-link to="/types">Types</router-link></li>
+            <li><router-link to="/countries">Countries</router-link></li>
+            <li><router-link to="/conversions">Conversions</router-link></li>
+          </ul>
+        </nav>
 
-      <div class="card">
-        <h2>Campaign Performance</h2>
-        <div id="campaign-list">Loading detailed data...</div>
+        <!-- Main Content -->
+        <main class="app-main">
+          <router-view></router-view>
+        </main>
       </div>
     </div>
 
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+    <!-- Vue Router -->
+    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
+
+    <!-- Chart.js (required by PrimeVue Chart) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PrimeVue Core -->
+    <script src="https://unpkg.com/primevue@3/core/core.min.js"></script>
+
+    <!-- PrimeVue Components (loaded as needed) -->
+    <script src="https://unpkg.com/primevue@3/datatable/datatable.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/column/column.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/dropdown/dropdown.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/multiselect/multiselect.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/calendar/calendar.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/card/card.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/button/button.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/progressspinner/progressspinner.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/skeleton/skeleton.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/chart/chart.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/tabview/tabview.min.js"></script>
+    <script src="https://unpkg.com/primevue@3/tabpanel/tabpanel.min.js"></script>
+
     <script>
-      // Fetch data from server on load
-      google.script.run
-        .withSuccessHandler(renderDashboard)
-        .withFailureHandler(showError)
-        .getDashboardData();
+      // ============================================================
+      // Placeholder View Components (to be replaced in later tasks)
+      // ============================================================
 
-      function renderDashboard(data) {
-        console.log("Data received:", data);
+      const OverviewView = {
+        template: `
+          <div class="card">
+            <h2>Overview</h2>
+            <p>Dashboard overview with summary cards will be implemented here.</p>
+          </div>
+        `
+      };
 
-        // Simple aggregation logic for the MVP
-        let totalSpend = 0;
-        let totalSessions = 0;
-        let totalConversions = 0;
+      const TrendsView = {
+        template: `
+          <div class="card">
+            <h2>Trends</h2>
+            <p>Time series charts will be implemented here.</p>
+          </div>
+        `
+      };
 
-        // Ads Data aggregation (Column 3 is Cost - index 3? No, verify SheetManager mapping)
-        // Ads Columns: Date, ID, Name, Cost, Clicks, Impressions...
-        // Cost is index 3.
+      const CampaignsView = {
+        template: `
+          <div class="card">
+            <h2>Campaigns</h2>
+            <p>Campaign performance table will be implemented here.</p>
+          </div>
+        `
+      };
 
-        if (data.ads && data.ads.length > 0) {
-          data.ads.forEach((row) => {
-            // Cost comes in micros usually from API, but our mock returned float 150.00
-            // Let's assume standard units for now based on service mock
-            totalSpend += Number(row[3]) || 0;
-          });
+      const DevicesView = {
+        template: `
+          <div class="card">
+            <h2>Devices</h2>
+            <p>Device breakdown will be implemented here.</p>
+          </div>
+        `
+      };
+
+      const TypesView = {
+        template: `
+          <div class="card">
+            <h2>Campaign Types</h2>
+            <p>Campaign type breakdown will be implemented here.</p>
+          </div>
+        `
+      };
+
+      const CountriesView = {
+        template: `
+          <div class="card">
+            <h2>Countries</h2>
+            <p>Geographic analysis will be implemented here.</p>
+          </div>
+        `
+      };
+
+      const ConversionsView = {
+        template: `
+          <div class="card">
+            <h2>Conversions</h2>
+            <p>Conversion event configuration will be implemented here.</p>
+          </div>
+        `
+      };
+
+      // ============================================================
+      // Vue Router Configuration
+      // ============================================================
+
+      const routes = [
+        { path: '/', redirect: '/overview' },
+        { path: '/overview', component: OverviewView, name: 'overview' },
+        { path: '/trends', component: TrendsView, name: 'trends' },
+        { path: '/campaigns', component: CampaignsView, name: 'campaigns' },
+        { path: '/devices', component: DevicesView, name: 'devices' },
+        { path: '/types', component: TypesView, name: 'types' },
+        { path: '/countries', component: CountriesView, name: 'countries' },
+        { path: '/conversions', component: ConversionsView, name: 'conversions' }
+      ];
+
+      const router = VueRouter.createRouter({
+        history: VueRouter.createWebHashHistory(),
+        routes
+      });
+
+      // ============================================================
+      // Vue App
+      // ============================================================
+
+      const app = Vue.createApp({
+        data() {
+          return {
+            dataFreshness: 'Loading...'
+          };
+        },
+        mounted() {
+          // TODO: Fetch actual timestamp from server
+          this.dataFreshness = new Date().toLocaleDateString();
         }
+      });
 
-        if (data.ga4 && data.ga4.length > 0) {
-          data.ga4.forEach((row) => {
-            totalSessions += Number(row[1]) || 0; // Sessions index 1
-            totalConversions += Number(row[3]) || 0; // Conversions index 3
-          });
-        }
+      // Register PrimeVue
+      app.use(primevue.config.default);
 
-        document.getElementById("total-spend").textContent =
-          "$" + totalSpend.toFixed(2);
-        document.getElementById("total-sessions").textContent =
-          totalSessions.toLocaleString();
-        document.getElementById("total-conversions").textContent =
-          totalConversions;
-        document.getElementById("campaign-list").textContent =
-          "Data loaded. (Chart implementation pending)";
-      }
+      // Register PrimeVue components globally
+      app.component('DataTable', primevue.datatable);
+      app.component('Column', primevue.column);
+      app.component('Dropdown', primevue.dropdown);
+      app.component('MultiSelect', primevue.multiselect);
+      app.component('Calendar', primevue.calendar);
+      app.component('Card', primevue.card);
+      app.component('Button', primevue.button);
+      app.component('ProgressSpinner', primevue.progressspinner);
+      app.component('Skeleton', primevue.skeleton);
+      app.component('Chart', primevue.chart);
+      app.component('TabView', primevue.tabview);
+      app.component('TabPanel', primevue.tabpanel);
 
-      function showError(err) {
-        alert("Error loading dashboard: " + err.message);
-      }
+      // Use router
+      app.use(router);
+
+      // Mount app
+      app.mount('#app');
     </script>
   </body>
 </html>

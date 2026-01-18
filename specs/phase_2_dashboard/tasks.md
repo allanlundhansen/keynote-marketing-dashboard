@@ -74,29 +74,61 @@
 
 > **Note:** Upgraded to PrimeVue 4 with Aura theme. Comparison mode supports flexible date range comparison including custom ranges.
 
-## 5. Dashboard Home View
+## 5. Dashboard Home View (Overview)
 
-### 5.1 Summary Cards Row
-- [ ] Display Total Cost card
-- [ ] Display Total Clicks card
-- [ ] Display Total Impressions card
-- [ ] Display Total Sessions card
-- [ ] Display Total Engaged Sessions card
-- [ ] Display Conversion Count card (based on selected events)
-- [ ] Calculate and show % change vs previous period
-- [ ] Color-code changes (green = improvement, red = decline)
+### 5.1 Primary KPIs (4 Large Cards)
+- [ ] Display Total Cost card (with comparison %)
+- [ ] Display Conversions card (with comparison %)
+- [ ] Display Cost per Conversion card (with comparison %)
+- [ ] Display Engagement Rate card (EngagedSessions / Sessions, with comparison %)
+- [ ] Style these 4 cards prominently as the primary metrics
 
-### 5.2 Quick Stats
-- [ ] Calculate and display CTR (Clicks / Impressions)
-- [ ] Calculate and display Avg CPC (Cost / Clicks)
-- [ ] Calculate and display Cost per Session
-- [ ] Calculate and display Cost per Conversion
+> **Rationale:** These 4 metrics answer "Is my marketing working?" — Cost + Conversions = effort vs outcome, Cost/Conversion = efficiency, Engagement Rate = funnel health.
 
-### 5.3 Data Loading
-- [ ] Call `getDashboardData()` on mount
+### 5.2 Funnel Visualization
+- [ ] Create horizontal funnel component showing: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
+- [ ] Display absolute number at each stage
+- [ ] Display conversion rate between each stage (CTR, Click→Session rate, Session→Engaged rate, Engaged→Conversion rate)
+- [ ] Visual width proportional to volume (funnel narrows left to right)
+- [ ] Color indicators vs comparison period (green arrow if improved, red if declined)
+- [ ] Responsive design (stacks vertically on mobile)
+
+> **Rationale:** The funnel visualization is the core value proposition of this dashboard. It answers "WHERE in my funnel am I losing people?" — the diagnostic tool the project exists to provide.
+
+### 5.3 Supporting Metrics (6 Smaller Cards)
+- [ ] Display Impressions card
+- [ ] Display Clicks card
+- [ ] Display CTR card (Clicks / Impressions)
+- [ ] Display Sessions card
+- [ ] Display Avg CPC card (Cost / Clicks)
+- [ ] Display Cost per Session card
+- [ ] Style these 6 cards smaller/secondary to primary KPIs
+
+### 5.4 Trend Sparkline
+- [ ] Create line chart showing Cost and Conversions over selected date range
+- [ ] Use Chart.js for rendering
+- [ ] Responsive sizing
+- [ ] Simple tooltip on hover showing exact values
+- [ ] Legend showing which line is which
+
+> **Rationale:** Addresses the goal "Understand if campaigns are underperforming vs. external factors (seasonality, economy)".
+
+### 5.5 Quick Insights (Lazy-Loaded Keywords)
+- [ ] Create backend function `getTopKeywords(dateFrom, dateTo, limit)` that returns top keywords by cost and by conversions
+- [ ] Lazy-load this section AFTER main Overview renders (async, non-blocking)
+- [ ] Display "Top 5 Keywords by Cost" mini-table (Keyword, Cost, Clicks, Conversions)
+- [ ] Display "Top 5 Keywords by Conversions" mini-table (Keyword, Conversions, Cost, CTR)
+- [ ] Show loading spinner while keywords load
+- [ ] Handle empty state if no keyword data available
+
+> **Rationale:** Keywords are the actionable lever for Google Ads optimization. Lazy-loading preserves <2s initial load while surfacing actionable insights on the main view.
+
+### 5.6 Data Loading
+- [ ] Call `getDashboardData()` on mount (Summary sheets - fast)
 - [ ] Show loading skeleton while fetching
 - [ ] Handle errors gracefully
 - [ ] Apply filters to loaded data client-side
+- [ ] After main data loads, trigger lazy-load of Quick Insights (Keywords)
 
 ## 6. Trend Analysis View
 

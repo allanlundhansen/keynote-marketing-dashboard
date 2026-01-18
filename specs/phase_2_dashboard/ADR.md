@@ -463,3 +463,205 @@ Automatic detection of anomalies (e.g., "Cost up 50% vs last month") could be va
 - No proactive anomaly detection in Phase 2
 - User must actively check dashboard for issues
 - Can add in future phase based on usage patterns
+
+---
+
+## ADR-024: Overview Dashboard Structure - Hierarchical Metrics + Funnel Visualization
+
+- **Status**: Accepted
+
+### Context
+
+The Overview (Dashboard Home) needs to answer "Is my marketing working?" at a glance. The original spec listed 10 metrics to display as equal-weight cards, but this approach:
+
+1. Doesn't tell a story - just shows data without prioritization
+2. Doesn't highlight the funnel - the core value proposition of this project
+3. Forces users to mentally process which metrics matter most
+4. Misses the unique insight this dashboard can provide: WHERE in the funnel problems occur
+
+### Decision
+
+Structure the Overview in **5 hierarchical sections** with distinct purposes:
+
+1. **Primary KPIs (4 large cards)**: Cost, Conversions, Cost/Conversion, Engagement Rate
+2. **Funnel Visualization**: Impressions → Clicks → Sessions → Engaged → Conversions with rates
+3. **Supporting Metrics (6 smaller cards)**: Impressions, Clicks, CTR, Sessions, Avg CPC, Cost/Session
+4. **Trend Sparkline**: Cost + Conversions over time
+5. **Quick Insights (lazy-loaded)**: Top keywords by cost/conversions
+
+### Rationale
+
+**1. Primary KPIs (4 metrics, not 10)**
+
+These 4 metrics directly answer "Is my marketing working?":
+- **Cost** = what we're spending
+- **Conversions** = what we're getting (business outcome)
+- **Cost/Conversion** = THE efficiency metric - answers "is this profitable?"
+- **Engagement Rate** = funnel health indicator (Engaged Sessions / Sessions)
+
+Other metrics (Impressions, Clicks, CTR, etc.) are context, not the answer. Elevating 4 metrics creates visual hierarchy and reduces cognitive load.
+
+**2. Funnel Visualization**
+
+This is the **core value proposition** of the entire project. From implementation_plan.md:
+
+> "Analyze the full funnel: Ads → Landing Page → Booking Inquiry"
+> "Conversion funnel drop-off (where are we losing people?)"
+
+A visual funnel showing conversion rates at each stage provides instant diagnostic value:
+- Low CTR → Ad creative/targeting problem
+- Low Click→Session rate → Landing page load or ad/page mismatch
+- Low Session→Engaged rate → Landing page content problem
+- Low Engaged→Conversion rate → CTA/offer problem
+
+No generic dashboard provides this. It's our differentiation.
+
+**3. Supporting Metrics (secondary visual weight)**
+
+Impressions, Clicks, CTR, Sessions, Avg CPC, Cost/Session are useful context but shouldn't compete with primary KPIs. Smaller cards, positioned below primary metrics.
+
+**4. Trend Sparkline**
+
+Addresses the explicit goal: "Understand if campaigns are underperforming vs. external factors (seasonality, economy)". A simple line chart showing Cost + Conversions trends over time.
+
+**5. Quick Insights (lazy-loaded)**
+
+Keywords are the actionable lever for Google Ads optimization. Showing top keywords by cost and conversions surfaces actionable insights on the main page without requiring drill-down navigation.
+
+Lazy-loading strategy preserves <2s initial load requirement (keywords come from Raw sheets, which are large).
+
+### Alternatives Considered
+
+| Alternative | Why Rejected |
+|-------------|--------------|
+| 10 equal-weight metric cards | Overwhelming; doesn't prioritize; doesn't tell a story |
+| Funnel in separate "Funnel" tab | Hides core value; Overview should preview key insights |
+| No keyword insights on Overview | Hides actionable data; forces extra clicks for common task |
+| Load all sections synchronously | Would break <2s load requirement for keywords |
+
+### Consequences
+
+**Positive:**
+- Clear visual hierarchy guides user attention
+- Funnel visualization provides unique diagnostic value
+- Keyword insights surface actionable data immediately
+- Lazy-loading maintains fast initial load
+- Design directly serves project goals
+
+**Negative:**
+- More complex than simple metric cards
+- Funnel visualization component requires custom development
+- Lazy-loading adds async complexity
+
+---
+
+## ADR-025: PrimeVue 4 Upgrade (from PrimeVue 3)
+
+- **Status**: Accepted
+
+### Context
+
+Initial implementation used PrimeVue 3 via CDN. PrimeVue 4 was released with significant improvements and a new theming system.
+
+### Decision
+
+Upgrade to **PrimeVue 4** with the new Aura theme via `@primeuix/themes`.
+
+```html
+<script src="https://unpkg.com/primevue/umd/primevue.min.js"></script>
+<script src="https://unpkg.com/@primeuix/themes/umd/aura.js"></script>
+```
+
+Configuration:
+```javascript
+app.use(PrimeVue.Config, {
+  theme: {
+    preset: PrimeUIX.Themes.Aura,
+    options: {
+      darkModeSelector: false  // Force light mode
+    }
+  }
+});
+```
+
+### Rationale
+
+1. **Latest version**: PrimeVue 4 is current; PrimeVue 3 will eventually lose support
+2. **Better theming**: New preset-based theming system is cleaner
+3. **Component improvements**: DatePicker, MultiSelect, Drawer have better APIs
+4. **Dark mode control**: Can explicitly disable dark mode to prevent system preference issues
+
+### Key Changes from PrimeVue 3
+
+| PrimeVue 3 | PrimeVue 4 |
+|------------|------------|
+| `Calendar` | `DatePicker` |
+| `Sidebar` | `Drawer` |
+| CSS theme files | `@primeuix/themes` presets |
+| `PrimeVue.Themes.Aura` | `PrimeUIX.Themes.Aura` |
+
+### Consequences
+
+**Positive:**
+- Modern, supported version
+- Cleaner theming system
+- Better component APIs
+- Explicit dark mode control
+
+**Negative:**
+- Component name changes required code updates
+- Theme configuration syntax changed
+
+---
+
+## ADR-026: Flexible Comparison Mode
+
+- **Status**: Accepted
+
+### Context
+
+Users need to compare current performance against historical data. Initial implementation had only a YoY (Year-over-Year) toggle.
+
+### Decision
+
+Implement **flexible comparison mode** with multiple options:
+
+1. **None** - No comparison
+2. **Previous Period** - Compare to the immediately preceding period of same length
+3. **Same Period Last Year** - Compare to same months in previous year
+4. **Custom** - User selects specific comparison date range
+
+### Rationale
+
+1. **MoM analysis**: Users often want Month-over-Month comparison, not just YoY
+2. **Seasonal patterns**: Sometimes need to compare to specific past periods (e.g., last Q4)
+3. **Flexibility**: Different analysis questions require different comparison baselines
+
+### Implementation
+
+State structure:
+```javascript
+dateRange: {
+  from: '2025-01',
+  to: '2025-12',
+  comparisonMode: 'none',      // 'none' | 'previous' | 'lastYear' | 'custom'
+  compareFrom: null,           // For custom mode
+  compareTo: null              // For custom mode
+}
+```
+
+Comparison range calculation:
+- **previous**: Shift primary range back by its length (e.g., 12 months → previous 12 months)
+- **lastYear**: Same months, year - 1
+- **custom**: User-specified dates
+
+### Consequences
+
+**Positive:**
+- Supports multiple analysis scenarios
+- User has full control over comparison baseline
+- Persisted in URL for bookmarking
+
+**Negative:**
+- More complex UI than simple toggle
+- Custom mode requires additional date pickers

@@ -132,37 +132,109 @@ Filters can be persisted in URL for bookmarking/sharing:
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  HEADER                                                    Data as of: ...  │
-│  Marketing Dashboard                          [Date Range ▼] [Compare □]    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ FILTERS                                                                     │
-│ [Campaign ▼] [Type ▼] [Device ▼]                              [Clear All]   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌──────┐ │
-│  │  Cost   │  │ Clicks  │  │Sessions │  │Engaged  │  │Convers. │  │ CPC  │ │
-│  │ $12,345 │  │  1,234  │  │   890   │  │   567   │  │   45    │  │$10.00│ │
-│  │  +12%   │  │  -5%    │  │  +8%    │  │  +15%   │  │  +20%   │  │ -3%  │ │
-│  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └──────┘ │
-│                                                                             │
+│  Marketing Dashboard                                                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ NAVIGATION TABS                                                             │
 │ [Overview] [Trends] [Campaigns] [Devices] [Types] [Countries] [Conversions] │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
+│  [⚙ Filters]  ← Opens sidebar drawer with filters & date range             │
+│                                                                             │
 │                          MAIN CONTENT AREA                                  │
 │                                                                             │
-│   (Changes based on selected tab)                                           │
-│                                                                             │
-│   Overview:   Summary + mini charts                                         │
-│   Trends:     Time series chart with metric selector                        │
-│   Campaigns:  Sortable table + drill-down links                             │
-│   Devices:    Device breakdown chart + table                                │
-│   Types:      Campaign type breakdown                                       │
-│   Countries:  Geographic breakdown                                          │
-│   Conversions: Event selector + conversion metrics                          │
+│   (Changes based on selected tab - see Overview Layout below)               │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Overview Layout (Dashboard Home)
+
+The Overview is structured in 5 sections, ordered by importance:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SECTION 1: PRIMARY KPIs (4 large cards - "Is my marketing working?")        │
+│                                                                             │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐ │
+│  │  TOTAL COST   │  │  CONVERSIONS  │  │ COST/CONVERS. │  │ ENGAGE RATE   │ │
+│  │   $45,230     │  │      127      │  │    $356.14    │  │    68.2%      │ │
+│  │    ▲ +12%     │  │    ▲ +23%     │  │    ▼ -8%      │  │    ▲ +5%      │ │
+│  └───────────────┘  └───────────────┘  └───────────────┘  └───────────────┘ │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SECTION 2: FUNNEL VISUALIZATION ("Where am I losing people?")               │
+│                                                                             │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌────────┐ │
+│  │Impressions│──▶│  Clicks  │──▶│ Sessions │──▶│ Engaged  │──▶│Converts │ │
+│  │  150,000  │    │   7,500  │    │   7,200  │    │   4,800  │    │   127   │ │
+│  │           │    │   5.0%   │    │  96.0%   │    │  66.7%   │    │  2.6%   │ │
+│  │           │    │   ▲ +0.3 │    │   ▼ -2   │    │   ▲ +4   │    │  ▲ +0.5 │ │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └────────┘ │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SECTION 3: SUPPORTING METRICS (6 smaller cards - context)                   │
+│                                                                             │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │Impress. │ │ Clicks  │ │   CTR   │ │Sessions │ │Avg CPC  │ │Cost/Sess│   │
+│  │ 150,000 │ │  7,500  │ │  5.0%   │ │  7,200  │ │  $6.03  │ │  $6.28  │   │
+│  │  +15%   │ │  +18%   │ │  +0.3%  │ │  +12%   │ │  -5%    │ │  +3%    │   │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SECTION 4: TREND SPARKLINE                                                  │
+│                                                                             │
+│  Cost & Conversions Over Time                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │     $                                                    Conversions │   │
+│  │  5k ┤  ╭──╮                                                    │ 20  │   │
+│  │  4k ┤ ╭╯  ╰╮    ╭─╮                                           │ 15  │   │
+│  │  3k ┤╭╯    ╰────╯ ╰╮  ╭──────╮                                │ 10  │   │
+│  │  2k ┼╯             ╰──╯      ╰─╮                               │  5  │   │
+│  │  1k ┤                          ╰─────                          │  0  │   │
+│  │     └────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬──┘     │   │
+│  │         Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov  Dec  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│  [─ Cost]  [─ Conversions]                                                  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SECTION 5: QUICK INSIGHTS (lazy-loaded after main content)                  │
+│                                                                             │
+│  Top Keywords by Cost              │  Top Keywords by Conversions           │
+│  ┌─────────────────────────────────┼─────────────────────────────────────┐  │
+│  │ Keyword          Cost    Conv.  │ Keyword          Conv.   Cost   CTR │  │
+│  │ keynote speaker  $8,230    23   │ motivational spk   31   $4,120  6.2%│  │
+│  │ motivational spk $4,120    31   │ keynote speaker    23   $8,230  4.8%│  │
+│  │ conference spkr  $3,890    18   │ leadership talk    19   $2,340  5.9%│  │
+│  │ corporate events $2,560    12   │ conference spkr    18   $3,890  5.1%│  │
+│  │ leadership talk  $2,340    19   │ corporate events   12   $2,560  4.3%│  │
+│  └─────────────────────────────────┴─────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Design Rationale:**
+
+1. **Primary KPIs (Section 1):** Answer "Is my marketing working?" with 4 metrics:
+   - Total Cost = what we're spending
+   - Conversions = what we're getting (business outcome)
+   - Cost/Conversion = efficiency (the key ROI metric)
+   - Engagement Rate = funnel health indicator
+
+2. **Funnel Visualization (Section 2):** The core value proposition. Shows WHERE in the funnel users are dropping off:
+   - Low CTR = ad creative/targeting problem
+   - Low Click→Session = landing page load or ad/page mismatch
+   - Low Session→Engaged = landing page content problem
+   - Low Engaged→Conversion = CTA/offer problem
+
+3. **Supporting Metrics (Section 3):** Context metrics that don't answer the core question but provide useful detail.
+
+4. **Trend Sparkline (Section 4):** Addresses seasonality concerns. Shows Cost + Conversions trend.
+
+5. **Quick Insights (Section 5):** Lazy-loaded to preserve <2s initial load. Surfaces actionable keyword data on the main page.
+
+**Loading Strategy:**
+- Sections 1-4 load immediately from Summary sheets (<2s)
+- Section 5 loads asynchronously after main render (Keywords from Raw sheet)
 
 ### Mobile Layout (<768px)
 

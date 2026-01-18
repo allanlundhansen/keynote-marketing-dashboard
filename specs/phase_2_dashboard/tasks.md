@@ -18,17 +18,19 @@
 ## 2. Backend API Layer (Apps Script)
 
 ### 2.1 Data Fetching Functions
-- [ ] Create `getDashboardData()` - returns Summary_Monthly + Summary_Events for date range
-- [ ] Create `getCampaignList()` - returns Summary_Campaigns for filter dropdowns
-- [ ] Create `getKeywordDetail(campaign, dateFrom, dateTo)` - returns Raw_Ads_Keywords filtered
-- [ ] Create `getSearchTermDetail(campaign, dateFrom, dateTo)` - returns Raw_Ads_SearchTerms filtered
-- [ ] Create `getLandingPageDetail(campaign, dateFrom, dateTo)` - returns Raw_GA4_Pages filtered
-- [ ] Create `getGeographicData(dateFrom, dateTo)` - returns Raw_Ads_Geographic with country mapping
+- [x] Create `getDashboardData()` - returns Summary_Monthly + Summary_Events for date range
+- [x] Create `getCampaignList()` - returns Summary_Campaigns for filter dropdowns
+- [x] Create `getKeywordDetail(campaign, dateFrom, dateTo)` - returns Raw_Ads_Keywords filtered
+- [x] Create `getSearchTermDetail(campaign, dateFrom, dateTo)` - returns Raw_Ads_SearchTerms filtered
+- [x] Create `getLandingPageDetail(campaign, dateFrom, dateTo)` - returns Raw_GA4_Pages filtered
+- [x] Create `getGeographicData(dateFrom, dateTo)` - returns Raw_Ads_Geographic with country mapping
+
+> **Note:** `getKeywordDetail` and `getSearchTermDetail` are slow (~30k+ rows). Consider pagination or server-side filtering in future optimization pass.
 
 ### 2.2 Web App Configuration
-- [ ] Update `doGet()` to serve index.html via HtmlService
-- [ ] Configure `HtmlService.createHtmlOutputFromFile()` with proper settings
-- [ ] Test basic web app deployment
+- [x] Update `doGet()` to serve index.html via HtmlService
+- [x] Configure `HtmlService.createHtmlOutputFromFile()` with proper settings
+- [x] Test basic web app deployment
 
 ## 3. State Management
 

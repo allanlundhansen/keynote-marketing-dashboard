@@ -31,32 +31,77 @@ This phase delivers the web-based dashboard UI that visualizes marketing perform
 
 ### 1. Dashboard Home (Primary View)
 
-#### 1.1 Performance Summary Cards
+The Overview answers "Is my marketing working?" at a glance through a hierarchical layout with 5 sections.
 
-- [ ] Display key metrics in prominent cards:
-  - Total Cost (spend)
-  - Total Clicks
-  - Total Impressions
-  - Total Sessions (from GA4)
-  - Total Engaged Sessions
-  - Conversion Count (based on selected events)
-- [ ] Show percentage change vs previous period (configurable: MoM or YoY)
+#### 1.1 Primary KPIs (4 Large Cards)
+
+- [ ] Display 4 key metrics prominently:
+  - Total Cost (what we're spending)
+  - Conversions (what we're getting - based on selected events)
+  - Cost per Conversion (efficiency metric)
+  - Engagement Rate (Engaged Sessions / Sessions - funnel health)
+- [ ] Show percentage change vs comparison period
 - [ ] Color-code changes (green for improvement, red for decline)
+- [ ] These 4 metrics answer the core question directly
 
-#### 1.2 Date Range Selection
+#### 1.2 Funnel Visualization
 
-- [ ] Default view: Current month
-- [ ] Quick selectors: This Month, Last Month, Last 3 Months, Last 12 Months, YTD
+- [ ] Display horizontal funnel: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
+- [ ] Show absolute number at each stage
+- [ ] Show conversion rate between each stage (CTR, Click→Session, Session→Engaged, Engaged→Conversion)
+- [ ] Show rate change vs comparison period (▲/▼ indicators)
+- [ ] Visual width proportional to volume (funnel narrows)
+- [ ] Diagnostic value: identifies WHERE in funnel problems occur
+
+#### 1.3 Supporting Metrics (6 Smaller Cards)
+
+- [ ] Display context metrics in secondary prominence:
+  - Impressions
+  - Clicks
+  - CTR (Clicks / Impressions)
+  - Sessions
+  - Avg CPC (Cost / Clicks)
+  - Cost per Session
+- [ ] Show percentage change vs comparison period
+- [ ] Color-code changes
+
+#### 1.4 Trend Sparkline
+
+- [ ] Line chart showing Cost and Conversions over selected date range
+- [ ] Solid lines for current period (blue = Cost, green = Conversions)
+- [ ] When comparison mode enabled: overlay comparison period as dashed lines
+- [ ] X-axis aligned by relative position so periods overlay correctly
+- [ ] Tooltip shows all values (current + comparison) on hover
+- [ ] Reveals trend pattern differences, not just point-in-time comparison
+
+#### 1.5 Quick Insights (Keywords)
+
+- [ ] Lazy-load after main Overview renders (preserves <2s initial load)
+- [ ] Display "Top 5 Keywords by Cost" table with columns: Keyword, Cost, vs Prev, Clicks, Conversions
+- [ ] Display "Top 5 Keywords by Conversions" table with columns: Keyword, Conversions, vs Prev, Cost, CTR
+- [ ] "vs Prev" shows % change vs comparison period with color coding (▲ green, ▼ red)
+- [ ] When comparison mode is "none", show "—" in vs Prev column
+- [ ] Surfaces actionable keyword data without requiring drill-down
+
+#### 1.6 Date Range Selection
+
+- [ ] Default view: Last 12 months
 - [ ] Custom date range picker (by month, since data is monthly granularity)
-- [ ] Comparison toggle: Compare to same period last year
+- [ ] Comparison mode dropdown with options:
+  - None (no comparison)
+  - Previous Period (same length, immediately preceding)
+  - Same Period Last Year (YoY)
+  - Custom (user picks comparison date range)
+- [ ] Comparison data flows to all sections (KPIs, funnel, sparkline, keywords)
 
-#### 1.3 Filter Controls
+#### 1.7 Filter Controls
 
 - [ ] Filter by Campaign (multi-select)
 - [ ] Filter by Campaign Type (SEARCH, DISPLAY, VIDEO, PERFORMANCE_MAX)
 - [ ] Filter by Device (DESKTOP, MOBILE, TABLET)
 - [ ] Filters apply to all views and metrics
 - [ ] Clear all filters button
+- [ ] Filters accessible via sidebar drawer
 
 ### 2. Trend Analysis View
 

@@ -107,21 +107,31 @@
 ### 5.4 Trend Sparkline
 - [ ] Create line chart showing Cost and Conversions over selected date range
 - [ ] Use Chart.js for rendering
+- [ ] Solid lines for current period (blue = Cost, green = Conversions)
+- [ ] When comparison mode enabled, overlay comparison period as dashed lines (same colors)
+- [ ] X-axis aligned by relative position (month 1, 2, 3... so periods overlay correctly)
+- [ ] Tooltip on hover shows all values (current + comparison if enabled)
+- [ ] Legend showing: Cost (Current), Cost (Comparison), Conversions (Current), Conversions (Comparison)
 - [ ] Responsive sizing
-- [ ] Simple tooltip on hover showing exact values
-- [ ] Legend showing which line is which
+- [ ] When comparison mode is "none", only show solid lines (2 lines total)
 
-> **Rationale:** Addresses the goal "Understand if campaigns are underperforming vs. external factors (seasonality, economy)".
+> **Rationale:** Addresses the goal "Understand if campaigns are underperforming vs. external factors (seasonality, economy)". Overlaying comparison period reveals trend pattern differences - not just point-in-time comparison but whether current period follows same seasonal curve as comparison period.
 
 ### 5.5 Quick Insights (Lazy-Loaded Keywords)
-- [ ] Create backend function `getTopKeywords(dateFrom, dateTo, limit)` that returns top keywords by cost and by conversions
+- [ ] Create backend function `getTopKeywords(dateFrom, dateTo, compareDateFrom, compareDateTo, limit)` that returns top keywords with both current and comparison period data
 - [ ] Lazy-load this section AFTER main Overview renders (async, non-blocking)
-- [ ] Display "Top 5 Keywords by Cost" mini-table (Keyword, Cost, Clicks, Conversions)
-- [ ] Display "Top 5 Keywords by Conversions" mini-table (Keyword, Conversions, Cost, CTR)
+- [ ] Display "Top 5 Keywords by Cost" mini-table:
+  - Columns: Keyword, Cost, vs Prev (% change), Clicks, Conversions
+  - "vs Prev" shows ▲ green for increase, ▼ red for decrease (note: cost increase is typically bad)
+- [ ] Display "Top 5 Keywords by Conversions" mini-table:
+  - Columns: Keyword, Conversions, vs Prev (% change), Cost, CTR
+  - "vs Prev" shows ▲ green for increase, ▼ red for decrease
+- [ ] Sort tables by current period value (not comparison)
 - [ ] Show loading spinner while keywords load
 - [ ] Handle empty state if no keyword data available
+- [ ] Handle case when comparison mode is "none" (hide "vs Prev" column or show "—")
 
-> **Rationale:** Keywords are the actionable lever for Google Ads optimization. Lazy-loading preserves <2s initial load while surfacing actionable insights on the main view.
+> **Rationale:** Keywords are the actionable lever for Google Ads optimization. Comparison data makes insights actionable: "Keyword X cost up 24% - investigate" or "Keyword Y conversions up 40% - allocate more budget". Without comparison, you're just looking at numbers with no context.
 
 ### 5.6 Data Loading
 - [ ] Call `getDashboardData()` on mount (Summary sheets - fast)

@@ -181,33 +181,40 @@ The Overview is structured in 5 sections, ordered by importance:
 │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ SECTION 4: TREND SPARKLINE                                                  │
+│ SECTION 4: TREND SPARKLINE (with comparison overlay when enabled)           │
 │                                                                             │
 │  Cost & Conversions Over Time                                               │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │     $                                                    Conversions │   │
-│  │  5k ┤  ╭──╮                                                    │ 20  │   │
+│  │  5k ┤  ╭──╮         ← solid: current period                   │ 20  │   │
 │  │  4k ┤ ╭╯  ╰╮    ╭─╮                                           │ 15  │   │
-│  │  3k ┤╭╯    ╰────╯ ╰╮  ╭──────╮                                │ 10  │   │
-│  │  2k ┼╯             ╰──╯      ╰─╮                               │  5  │   │
-│  │  1k ┤                          ╰─────                          │  0  │   │
+│  │  3k ┤╭╯- - ╰- - ╯ ╰╮  ← dashed: comparison period             │ 10  │   │
+│  │  2k ┼╯             ╰──╯                                        │  5  │   │
+│  │  1k ┤                                                          │  0  │   │
 │  │     └────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬──┘     │   │
-│  │         Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov  Dec  │   │
+│  │         M1   M2   M3   M4   M5   M6   M7   M8   M9  M10  M11  M12   │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
-│  [─ Cost]  [─ Conversions]                                                  │
+│  [── Cost]  [── Conversions]  [- - Cost (prev)]  [- - Conv (prev)]         │
+│                                                                             │
+│  Note: X-axis shows relative months (M1, M2...) so current and comparison   │
+│  periods align. Tooltip shows all 4 values on hover.                        │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ SECTION 5: QUICK INSIGHTS (lazy-loaded after main content)                  │
+│ SECTION 5: QUICK INSIGHTS (lazy-loaded, with comparison data)               │
 │                                                                             │
-│  Top Keywords by Cost              │  Top Keywords by Conversions           │
-│  ┌─────────────────────────────────┼─────────────────────────────────────┐  │
-│  │ Keyword          Cost    Conv.  │ Keyword          Conv.   Cost   CTR │  │
-│  │ keynote speaker  $8,230    23   │ motivational spk   31   $4,120  6.2%│  │
-│  │ motivational spk $4,120    31   │ keynote speaker    23   $8,230  4.8%│  │
-│  │ conference spkr  $3,890    18   │ leadership talk    19   $2,340  5.9%│  │
-│  │ corporate events $2,560    12   │ conference spkr    18   $3,890  5.1%│  │
-│  │ leadership talk  $2,340    19   │ corporate events   12   $2,560  4.3%│  │
-│  └─────────────────────────────────┴─────────────────────────────────────┘  │
+│  Top Keywords by Cost                    Top Keywords by Conversions        │
+│  ┌───────────────────────────────────┐   ┌───────────────────────────────┐  │
+│  │ Keyword         Cost   vs Prev    │   │ Keyword        Conv  vs Prev  │  │
+│  │ keynote speaker $8,230  ▲ +24%    │   │ motivational    31   ▲ +40%   │  │
+│  │ motivational    $4,120  ▼ -12%    │   │ keynote spk     23   ▼ -8%    │  │
+│  │ conference spkr $3,890  ▲ +8%     │   │ leadership      19   ▲ +15%   │  │
+│  │ corporate evts  $2,560  ── 0%     │   │ conference      18   ▲ +5%    │  │
+│  │ leadership      $2,340  ▲ +31%    │   │ corporate       12   ▼ -20%   │  │
+│  └───────────────────────────────────┘   └───────────────────────────────┘  │
+│                                                                             │
+│  Note: "vs Prev" shows % change vs comparison period. Green ▲ = increase,   │
+│  Red ▼ = decrease. For cost, increase is typically bad (shown in red).      │
+│  When comparison mode is "none", "vs Prev" column shows "—".                │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -228,9 +235,15 @@ The Overview is structured in 5 sections, ordered by importance:
 
 3. **Supporting Metrics (Section 3):** Context metrics that don't answer the core question but provide useful detail.
 
-4. **Trend Sparkline (Section 4):** Addresses seasonality concerns. Shows Cost + Conversions trend.
+4. **Trend Sparkline (Section 4):** Shows Cost + Conversions trend over time. When comparison mode is enabled, overlays the comparison period as dashed lines. This reveals trend PATTERN differences - not just point-in-time comparison but whether current period follows the same seasonal curve as comparison period. Divergences become immediately visible: "We spiked in March last year but not this year."
 
-5. **Quick Insights (Section 5):** Lazy-loaded to preserve <2s initial load. Surfaces actionable keyword data on the main page.
+5. **Quick Insights (Section 5):** Lazy-loaded to preserve <2s initial load. Surfaces actionable keyword data with comparison context via "vs Prev" column. This makes insights actionable: "Keyword X cost up 24% - investigate" or "Keyword Y conversions up 40% - allocate more budget."
+
+**Comparison Strategy:**
+All sections support comparison mode when enabled:
+- Sections 1, 2, 3: Show % change indicators (▲/▼) on cards
+- Section 4: Overlay comparison period as dashed lines
+- Section 5: "vs Prev" column shows % change per keyword
 
 **Loading Strategy:**
 - Sections 1-4 load immediately from Summary sheets (<2s)

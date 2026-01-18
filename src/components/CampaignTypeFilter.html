@@ -1,0 +1,85 @@
+<script>
+const CampaignTypeFilter = {
+  name: 'CampaignTypeFilter',
+  inject: ['store', 'storeActions', 'storeComputed'],
+  template: `
+    <div class="filter-field">
+      <label>Campaign Types</label>
+      <MultiSelect
+        v-model="selectedTypes"
+        :options="typeOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Types"
+        :maxSelectedLabels="2"
+        selectedItemsLabel="{0} types"
+        display="comma"
+        @change="onChange"
+        class="filter-multiselect"
+      />
+    </div>
+  `,
+
+  data() {
+    return {
+      selectedTypes: []
+    };
+  },
+
+  computed: {
+    typeOptions() {
+      return this.storeComputed.uniqueCampaignTypes().map(type => ({
+        value: type,
+        label: this.formatType(type)
+      }));
+    }
+  },
+
+  watch: {
+    'store.filters.campaignTypes': {
+      immediate: true,
+      handler(val) {
+        this.selectedTypes = val || [];
+      }
+    }
+  },
+
+  methods: {
+    formatType(type) {
+      const labels = {
+        'SEARCH': 'Search',
+        'DISPLAY': 'Display',
+        'VIDEO': 'Video',
+        'SHOPPING': 'Shopping',
+        'PERFORMANCE_MAX': 'Performance Max',
+        'DEMAND_GEN': 'Demand Gen'
+      };
+      return labels[type] || type;
+    },
+
+    onChange() {
+      this.storeActions.setFilters({
+        campaignTypes: this.selectedTypes
+      });
+    }
+  }
+};
+</script>
+
+<style>
+.filter-field {
+  width: 100%;
+}
+
+.filter-field label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.filter-multiselect {
+  width: 100%;
+}
+</style>

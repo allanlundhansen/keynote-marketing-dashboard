@@ -52,25 +52,27 @@
 ## 4. Core Components
 
 ### 4.1 Layout Components
-- [ ] Create `AppHeader` component (logo, navigation tabs)
-- [ ] Create `AppSidebar` component (filters panel)
-- [ ] Create `MainContent` wrapper component
-- [ ] Create responsive layout (sidebar collapses on mobile)
+- [x] Header with logo and navigation (kept inline in index.html)
+- [x] Create `AppSidebar` component (PrimeVue Drawer with filters)
+- [x] DataFreshness display (inline in header)
+
+> **Note:** AppHeader and MainContent kept inline for simplicity. Drawer-based sidebar collapses automatically on mobile.
 
 ### 4.2 Shared Components
-- [ ] Create `MetricCard` component (value, label, change %, trend indicator)
-- [ ] Create `LoadingSpinner` component
-- [ ] Create `ErrorMessage` component with retry button
-- [ ] Create `EmptyState` component with helpful message
-- [ ] Create `DataFreshness` component (shows "Data as of: X")
+- [x] Create `MetricCard` component (value, label, change %, trend indicator)
+- [x] Create `LoadingSpinner` component
+- [x] Create `ErrorMessage` component with retry button
+- [x] Create `EmptyState` component with helpful message
 
 ### 4.3 Filter Components
-- [ ] Create `DateRangePicker` component (month selector with presets)
-- [ ] Create `CampaignFilter` component (multiselect dropdown)
-- [ ] Create `DeviceFilter` component (multiselect: DESKTOP, MOBILE, TABLET)
-- [ ] Create `CampaignTypeFilter` component (multiselect: SEARCH, DISPLAY, etc.)
-- [ ] Create `ClearFilters` button
-- [ ] Create `ComparisonToggle` component (YoY comparison on/off)
+- [x] Create `DateRangePicker` component (PrimeVue DatePicker with presets)
+- [x] Create `CampaignFilter` component (PrimeVue MultiSelect)
+- [x] Create `DeviceFilter` component (PrimeVue MultiSelect)
+- [x] Create `CampaignTypeFilter` component (PrimeVue MultiSelect)
+- [x] Create `ClearFilters` button
+- [x] Create `ComparisonMode` component (dropdown: None, Previous period, Same period last year, Custom with date picker)
+
+> **Note:** Upgraded to PrimeVue 4 with Aura theme. Comparison mode supports flexible date range comparison including custom ranges.
 
 ## 5. Dashboard Home View
 

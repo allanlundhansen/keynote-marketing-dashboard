@@ -1,0 +1,82 @@
+<script>
+const DeviceFilter = {
+  name: 'DeviceFilter',
+  inject: ['store', 'storeActions', 'storeComputed'],
+  template: `
+    <div class="filter-field">
+      <label>Devices</label>
+      <MultiSelect
+        v-model="selectedDevices"
+        :options="deviceOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Devices"
+        :maxSelectedLabels="2"
+        selectedItemsLabel="{0} devices"
+        display="comma"
+        @change="onChange"
+        class="filter-multiselect"
+      />
+    </div>
+  `,
+
+  data() {
+    return {
+      selectedDevices: []
+    };
+  },
+
+  computed: {
+    deviceOptions() {
+      return this.storeComputed.uniqueDevices().map(device => ({
+        value: device,
+        label: this.formatDevice(device)
+      }));
+    }
+  },
+
+  watch: {
+    'store.filters.devices': {
+      immediate: true,
+      handler(val) {
+        this.selectedDevices = val || [];
+      }
+    }
+  },
+
+  methods: {
+    formatDevice(device) {
+      const labels = {
+        'DESKTOP': 'Desktop',
+        'MOBILE': 'Mobile',
+        'TABLET': 'Tablet'
+      };
+      return labels[device] || device;
+    },
+
+    onChange() {
+      this.storeActions.setFilters({
+        devices: this.selectedDevices
+      });
+    }
+  }
+};
+</script>
+
+<style>
+.filter-field {
+  width: 100%;
+}
+
+.filter-field label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.filter-multiselect {
+  width: 100%;
+}
+</style>

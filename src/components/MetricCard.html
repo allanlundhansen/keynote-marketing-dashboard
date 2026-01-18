@@ -1,0 +1,138 @@
+<script>
+const MetricCard = {
+  name: 'MetricCard',
+  props: {
+    label: { type: String, required: true },
+    value: { type: [Number, String], required: true },
+    previousValue: { type: Number, default: null },
+    format: { type: String, default: 'number' }, // 'number', 'currency', 'percent'
+    precision: { type: Number, default: 0 },
+    invertTrend: { type: Boolean, default: false } // true for metrics where down is good (e.g., cost)
+  },
+
+  template: `
+    <Card class="metric-card">
+      <template #content>
+        <div class="metric-label">{{ label }}</div>
+        <div class="metric-value">{{ formattedValue }}</div>
+        <div v-if="showChange" class="metric-change" :class="changeClass">
+          <i :class="changeIcon"></i>
+          <span>{{ changeText }}</span>
+        </div>
+      </template>
+    </Card>
+  `,
+
+  computed: {
+    formattedValue() {
+      if (this.value === null || this.value === undefined) return '—';
+
+      const num = Number(this.value);
+      if (isNaN(num)) return this.value;
+
+      if (this.format === 'currency') {
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: this.precision,
+          maximumFractionDigits: this.precision
+        }).format(num);
+      }
+
+      if (this.format === 'percent') {
+        return new Intl.NumberFormat('en-US', {
+          style: 'percent',
+          minimumFractionDigits: this.precision,
+          maximumFractionDigits: this.precision
+        }).format(num);
+      }
+
+      return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: this.precision,
+        maximumFractionDigits: this.precision
+      }).format(num);
+    },
+
+    showChange() {
+      return this.previousValue !== null && this.previousValue !== undefined;
+    },
+
+    changePercent() {
+      if (!this.showChange || this.previousValue === 0) return null;
+      return ((this.value - this.previousValue) / this.previousValue) * 100;
+    },
+
+    changeText() {
+      if (this.changePercent === null) return '—';
+      const sign = this.changePercent >= 0 ? '+' : '';
+      return `${sign}${this.changePercent.toFixed(1)}%`;
+    },
+
+    isPositiveChange() {
+      if (this.changePercent === null) return null;
+      const isUp = this.changePercent >= 0;
+      return this.invertTrend ? !isUp : isUp;
+    },
+
+    changeClass() {
+      if (this.changePercent === null || this.changePercent === 0) return 'neutral';
+      return this.isPositiveChange ? 'positive' : 'negative';
+    },
+
+    changeIcon() {
+      if (this.changePercent === null || this.changePercent === 0) return 'pi pi-minus';
+      return this.changePercent >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down';
+    }
+  }
+};
+</script>
+
+<style>
+.metric-card {
+  height: 100%;
+}
+
+.metric-card .p-card-content {
+  padding: 0;
+}
+
+.metric-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.metric-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--space-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.metric-change.positive {
+  color: var(--color-success);
+}
+
+.metric-change.negative {
+  color: var(--color-error);
+}
+
+.metric-change.neutral {
+  color: var(--color-text-muted);
+}
+
+.metric-change i {
+  font-size: 12px;
+}
+</style>

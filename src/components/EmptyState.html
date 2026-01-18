@@ -1,0 +1,47 @@
+<script>
+const EmptyState = {
+  name: 'EmptyState',
+  props: {
+    icon: { type: String, default: 'pi pi-inbox' },
+    title: { type: String, default: 'No data found' },
+    message: { type: String, default: 'Try adjusting your filters or date range.' }
+  },
+  template: `
+    <div class="empty-state">
+      <i :class="icon"></i>
+      <h3>{{ title }}</h3>
+      <p>{{ message }}</p>
+    </div>
+  `
+};
+</script>
+
+<style>
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  gap: var(--space-sm);
+  text-align: center;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: var(--color-text-muted);
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+</style>

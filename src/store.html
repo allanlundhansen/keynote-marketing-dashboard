@@ -56,7 +56,9 @@ const store = Vue.reactive({
   dateRange: {
     from: getYearMonthAgo(11),  // Default: 12 months ago
     to: getCurrentYearMonth(),   // Default: current month
-    comparison: false            // Compare to same period last year
+    comparisonMode: 'none',      // 'none', 'previous', 'lastYear', 'custom'
+    compareFrom: null,           // Custom comparison start (YYYY-MM)
+    compareTo: null              // Custom comparison end (YYYY-MM)
   },
 
   // Conversion configuration (persisted to localStorage)
@@ -155,7 +157,13 @@ const storeActions = {
     // Date range
     if (store.dateRange.from) query.from = store.dateRange.from;
     if (store.dateRange.to) query.to = store.dateRange.to;
-    if (store.dateRange.comparison) query.compare = '1';
+    if (store.dateRange.comparisonMode !== 'none') {
+      query.compareMode = store.dateRange.comparisonMode;
+    }
+    if (store.dateRange.comparisonMode === 'custom') {
+      if (store.dateRange.compareFrom) query.compareFrom = store.dateRange.compareFrom;
+      if (store.dateRange.compareTo) query.compareTo = store.dateRange.compareTo;
+    }
 
     // Filters (only if not empty)
     if (store.filters.campaigns.length > 0) {
@@ -178,7 +186,9 @@ const storeActions = {
     // Date range
     if (query.from) store.dateRange.from = query.from;
     if (query.to) store.dateRange.to = query.to;
-    store.dateRange.comparison = query.compare === '1';
+    store.dateRange.comparisonMode = query.compareMode || 'none';
+    store.dateRange.compareFrom = query.compareFrom || null;
+    store.dateRange.compareTo = query.compareTo || null;
 
     // Filters
     if (query.campaigns) {
@@ -295,6 +305,44 @@ const storeComputed = {
       if (row.CampaignType) types.add(row.CampaignType);
     });
     return Array.from(types).sort();
+  },
+
+  // Calculate actual comparison date range based on mode
+  comparisonDateRange() {
+    const mode = store.dateRange.comparisonMode;
+    if (mode === 'none') return null;
+
+    if (mode === 'custom') {
+      return {
+        from: store.dateRange.compareFrom,
+        to: store.dateRange.compareTo
+      };
+    }
+
+    // Calculate based on primary range
+    const fromParts = store.dateRange.from.split('-').map(Number);
+    const toParts = store.dateRange.to.split('-').map(Number);
+    const fromDate = new Date(fromParts[0], fromParts[1] - 1, 1);
+    const toDate = new Date(toParts[0], toParts[1] - 1, 1);
+
+    // Calculate number of months in range
+    const monthsInRange = (toParts[0] - fromParts[0]) * 12 + (toParts[1] - fromParts[1]) + 1;
+
+    if (mode === 'lastYear') {
+      // Same period last year
+      fromDate.setFullYear(fromDate.getFullYear() - 1);
+      toDate.setFullYear(toDate.getFullYear() - 1);
+    } else if (mode === 'previous') {
+      // Previous period of same length
+      fromDate.setMonth(fromDate.getMonth() - monthsInRange);
+      toDate.setMonth(toDate.getMonth() - monthsInRange);
+    }
+
+    const formatYearMonth = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return {
+      from: formatYearMonth(fromDate),
+      to: formatYearMonth(toDate)
+    };
   }
 };
 </script>

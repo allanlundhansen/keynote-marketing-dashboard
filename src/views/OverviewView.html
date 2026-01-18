@@ -3,30 +3,133 @@ const OverviewView = {
   inject: ['store', 'storeActions', 'storeComputed'],
   template: `
     <div>
-      <div v-if="store.ui.isLoading" class="loading-container">
-        <ProgressSpinner />
-      </div>
-      <div v-else-if="store.ui.error" class="error-container">
-        <p>{{ store.ui.error }}</p>
-        <Button label="Retry" @click="retry" />
-      </div>
-      <div v-else class="card">
-        <h2>Overview</h2>
-        <p>Data loaded: {{ store.data.monthly.length }} monthly rows, {{ store.data.events.length }} event rows</p>
-        <p>Date range: {{ store.dateRange.from }} to {{ store.dateRange.to }}</p>
-        <p>Filtered rows: {{ storeComputed.filteredMonthly().length }}</p>
-        <p>Available campaigns: {{ storeComputed.uniqueCampaigns().length }}</p>
-        <p>Available devices: {{ storeComputed.uniqueDevices().join(', ') }}</p>
-        <p>Available campaign types: {{ storeComputed.uniqueCampaignTypes().join(', ') }}</p>
-        <p>Selected conversion events: {{ store.conversions.selectedEvents.join(', ') }}</p>
-        <p>Total conversions (filtered): {{ storeComputed.totalConversions() }}</p>
+      <LoadingSpinner v-if="store.ui.isLoading" message="Loading dashboard data..." />
+      <ErrorMessage v-else-if="store.ui.error" :message="store.ui.error" @retry="retry" />
+      <div v-else>
+        <div class="metrics-grid">
+          <MetricCard
+            label="Total Cost"
+            :value="metrics.cost"
+            :previousValue="comparisonMetrics?.cost"
+            format="currency"
+            :precision="0"
+            :invertTrend="true"
+          />
+          <MetricCard
+            label="Clicks"
+            :value="metrics.clicks"
+            :previousValue="comparisonMetrics?.clicks"
+          />
+          <MetricCard
+            label="Impressions"
+            :value="metrics.impressions"
+            :previousValue="comparisonMetrics?.impressions"
+          />
+          <MetricCard
+            label="Sessions"
+            :value="metrics.sessions"
+            :previousValue="comparisonMetrics?.sessions"
+          />
+          <MetricCard
+            label="Conversions"
+            :value="metrics.conversions"
+            :previousValue="comparisonMetrics?.conversions"
+          />
+          <MetricCard
+            label="CTR"
+            :value="metrics.ctr"
+            :previousValue="comparisonMetrics?.ctr"
+            format="percent"
+            :precision="2"
+          />
+        </div>
+
+        <div class="card" style="margin-top: var(--space-lg);">
+          <h3>Debug Info</h3>
+          <p>Date range: {{ store.dateRange.from }} to {{ store.dateRange.to }}</p>
+          <p>Comparison mode: {{ store.dateRange.comparisonMode }}</p>
+          <p v-if="storeComputed.comparisonDateRange()">
+            Comparison range: {{ storeComputed.comparisonDateRange()?.from }} to {{ storeComputed.comparisonDateRange()?.to }}
+          </p>
+          <p>Filtered rows: {{ storeComputed.filteredMonthly().length }}</p>
+        </div>
       </div>
     </div>
   `,
+
+  computed: {
+    metrics() {
+      const data = this.storeComputed.filteredMonthly();
+      return {
+        cost: data.reduce((sum, r) => sum + (r.Cost || 0), 0),
+        clicks: data.reduce((sum, r) => sum + (r.Clicks || 0), 0),
+        impressions: data.reduce((sum, r) => sum + (r.Impressions || 0), 0),
+        sessions: data.reduce((sum, r) => sum + (r.Sessions || 0), 0),
+        conversions: this.storeComputed.totalConversions(),
+        ctr: this.calculateCTR(data)
+      };
+    },
+
+    comparisonMetrics() {
+      const range = this.storeComputed.comparisonDateRange();
+      if (!range) return null;
+
+      const data = this.store.data.monthly.filter(row => {
+        if (row.YearMonth < range.from || row.YearMonth > range.to) return false;
+        if (this.store.filters.campaigns.length > 0) {
+          if (!this.store.filters.campaigns.includes(String(row.CampaignId))) return false;
+        }
+        if (this.store.filters.devices.length > 0) {
+          if (!this.store.filters.devices.includes(row.Device)) return false;
+        }
+        if (this.store.filters.campaignTypes.length > 0) {
+          if (!this.store.filters.campaignTypes.includes(row.CampaignType)) return false;
+        }
+        return true;
+      });
+
+      // Comparison conversions from events
+      const events = this.store.data.events.filter(row => {
+        if (row.YearMonth < range.from || row.YearMonth > range.to) return false;
+        if (this.store.filters.campaigns.length > 0) {
+          if (!this.store.filters.campaigns.includes(String(row.CampaignId))) return false;
+        }
+        if (this.store.filters.devices.length > 0) {
+          if (!this.store.filters.devices.includes(row.Device)) return false;
+        }
+        if (!this.store.conversions.selectedEvents.includes(row.EventName)) return false;
+        return true;
+      });
+
+      return {
+        cost: data.reduce((sum, r) => sum + (r.Cost || 0), 0),
+        clicks: data.reduce((sum, r) => sum + (r.Clicks || 0), 0),
+        impressions: data.reduce((sum, r) => sum + (r.Impressions || 0), 0),
+        sessions: data.reduce((sum, r) => sum + (r.Sessions || 0), 0),
+        conversions: events.reduce((sum, r) => sum + (r.EventCount || 0), 0),
+        ctr: this.calculateCTR(data)
+      };
+    }
+  },
+
   methods: {
     retry() {
       this.storeActions.loadDashboardData();
+    },
+
+    calculateCTR(data) {
+      const clicks = data.reduce((sum, r) => sum + (r.Clicks || 0), 0);
+      const impressions = data.reduce((sum, r) => sum + (r.Impressions || 0), 0);
+      return impressions > 0 ? clicks / impressions : 0;
     }
   }
 };
 </script>
+
+<style>
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+}
+</style>

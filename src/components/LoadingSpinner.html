@@ -1,0 +1,31 @@
+<script>
+const LoadingSpinner = {
+  name: 'LoadingSpinner',
+  props: {
+    message: { type: String, default: 'Loading...' }
+  },
+  template: `
+    <div class="loading-state">
+      <ProgressSpinner />
+      <p v-if="message">{{ message }}</p>
+    </div>
+  `
+};
+</script>
+
+<style>
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  gap: var(--space-md);
+}
+
+.loading-state p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+</style>

@@ -15,6 +15,7 @@ To be extra clear on the work flow principles I am just going to highlight them 
 5. ✅ Pair programming style - We work together, don't just code and disappear.
 6. ✅ ALWAYS, when making new or updated decisions that are not yet in any of the ADRs or in the Spec, update the documentation to reflect the changes.
 7. ✅ I am NOT interested in patchy workaround proposals, Either we can create a good solution or we think of something else, no lazy workarounds just to check off a task
+8. ✅ ANY external Library that is used you MUST first search the internet to make sure you are using the latest version of the library, and that it is compatible with the rest of the project, and that it is not deprecated, and that it is not vulnerable to any known security issues, AND that you know the documentation.
 
 ## Planning & Specification Standards
 
@@ -34,6 +35,7 @@ And one last very important point: Please correct me when you believe I am wrong
 ## Handling Blockers & Pivots
 
 When we hit a blocker (e.g., waiting for API access, unclear requirements):
+
 1. Document the blocker and current status
 2. Identify if there's a workaround that meets our "no lazy patches" standard
 3. If yes, discuss and agree on the workaround approach

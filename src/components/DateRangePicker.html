@@ -1,0 +1,186 @@
+<script>
+const DateRangePicker = {
+  name: 'DateRangePicker',
+  inject: ['store', 'storeActions'],
+  template: `
+    <div class="date-range-picker">
+      <label class="filter-label">Date Range</label>
+
+      <div class="date-range-fields">
+        <div class="date-field">
+          <label>From</label>
+          <DatePicker
+            v-model="fromDate"
+            view="month"
+            dateFormat="M yy"
+            showIcon
+            :maxDate="toDate"
+            @date-select="onFromChange"
+          />
+        </div>
+
+        <div class="date-field">
+          <label>To</label>
+          <DatePicker
+            v-model="toDate"
+            view="month"
+            dateFormat="M yy"
+            showIcon
+            :minDate="fromDate"
+            @date-select="onToChange"
+          />
+        </div>
+      </div>
+
+      <div class="date-range-presets">
+        <Button
+          v-for="preset in presets"
+          :key="preset.label"
+          :label="preset.label"
+          :outlined="!isPresetActive(preset)"
+          size="small"
+          @click="applyPreset(preset)"
+        />
+      </div>
+    </div>
+  `,
+
+  data() {
+    return {
+      fromDate: null,
+      toDate: null
+    };
+  },
+
+  computed: {
+    presets() {
+      const now = new Date();
+      const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      return [
+        {
+          label: 'Last 3 mo',
+          from: new Date(now.getFullYear(), now.getMonth() - 2, 1),
+          to: currentMonth
+        },
+        {
+          label: 'Last 6 mo',
+          from: new Date(now.getFullYear(), now.getMonth() - 5, 1),
+          to: currentMonth
+        },
+        {
+          label: 'Last 12 mo',
+          from: new Date(now.getFullYear(), now.getMonth() - 11, 1),
+          to: currentMonth
+        },
+        {
+          label: 'This year',
+          from: new Date(now.getFullYear(), 0, 1),
+          to: currentMonth
+        },
+        {
+          label: 'Last year',
+          from: new Date(now.getFullYear() - 1, 0, 1),
+          to: new Date(now.getFullYear() - 1, 11, 1)
+        }
+      ];
+    }
+  },
+
+  watch: {
+    'store.dateRange.from': {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          const [year, month] = val.split('-').map(Number);
+          this.fromDate = new Date(year, month - 1, 1);
+        }
+      }
+    },
+    'store.dateRange.to': {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          const [year, month] = val.split('-').map(Number);
+          this.toDate = new Date(year, month - 1, 1);
+        }
+      }
+    }
+  },
+
+  methods: {
+    dateToYearMonth(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    },
+
+    onFromChange() {
+      this.storeActions.setDateRange({
+        from: this.dateToYearMonth(this.fromDate),
+        to: this.dateToYearMonth(this.toDate)
+      });
+    },
+
+    onToChange() {
+      this.storeActions.setDateRange({
+        from: this.dateToYearMonth(this.fromDate),
+        to: this.dateToYearMonth(this.toDate)
+      });
+    },
+
+    applyPreset(preset) {
+      this.fromDate = preset.from;
+      this.toDate = preset.to;
+      this.storeActions.setDateRange({
+        from: this.dateToYearMonth(preset.from),
+        to: this.dateToYearMonth(preset.to)
+      });
+    },
+
+    isPresetActive(preset) {
+      if (!this.fromDate || !this.toDate) return false;
+      return this.dateToYearMonth(this.fromDate) === this.dateToYearMonth(preset.from) &&
+             this.dateToYearMonth(this.toDate) === this.dateToYearMonth(preset.to);
+    }
+  }
+};
+</script>
+
+<style>
+.date-range-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.filter-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.date-range-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.date-field label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.date-field :deep(.p-datepicker) {
+  width: 100%;
+}
+
+.date-range-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+</style>

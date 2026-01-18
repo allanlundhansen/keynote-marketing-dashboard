@@ -1,0 +1,225 @@
+<script>
+const AppSidebar = {
+  name: 'AppSidebar',
+  inject: ['store', 'storeActions', 'storeComputed'],
+  template: `
+    <div>
+      <Button
+        icon="pi pi-filter"
+        label="Filters"
+        outlined
+        @click="visible = true"
+      />
+
+      <Drawer v-model:visible="visible" header="Filters" position="left" class="filters-drawer">
+        <div class="filter-section">
+          <DateRangePicker />
+
+          <div class="comparison-mode">
+            <label>Compare to</label>
+            <Select
+              v-model="comparisonMode"
+              :options="comparisonOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="No comparison"
+              @change="onComparisonModeChange"
+              class="comparison-select"
+            />
+          </div>
+
+          <div v-if="comparisonMode === 'custom'" class="custom-comparison-dates">
+            <div class="date-field">
+              <label>Compare From</label>
+              <DatePicker
+                v-model="compareFromDate"
+                view="month"
+                dateFormat="M yy"
+                showIcon
+                :maxDate="compareToDate"
+                @date-select="onCustomDateChange"
+              />
+            </div>
+            <div class="date-field">
+              <label>Compare To</label>
+              <DatePicker
+                v-model="compareToDate"
+                view="month"
+                dateFormat="M yy"
+                showIcon
+                :minDate="compareFromDate"
+                @date-select="onCustomDateChange"
+              />
+            </div>
+          </div>
+
+          <div v-if="comparisonMode !== 'none' && comparisonMode !== 'custom'" class="comparison-info">
+            Comparing to: {{ comparisonRangeDisplay }}
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <CampaignFilter />
+        </div>
+
+        <div class="filter-section">
+          <DeviceFilter />
+        </div>
+
+        <div class="filter-section">
+          <CampaignTypeFilter />
+        </div>
+
+        <div class="filter-actions">
+          <Button
+            label="Clear Filters"
+            severity="secondary"
+            text
+            @click="clearFilters"
+          />
+        </div>
+      </Drawer>
+    </div>
+  `,
+
+  data() {
+    return {
+      visible: false,
+      comparisonMode: 'none',
+      compareFromDate: null,
+      compareToDate: null,
+      comparisonOptions: [
+        { value: 'none', label: 'No comparison' },
+        { value: 'previous', label: 'Previous period' },
+        { value: 'lastYear', label: 'Same period last year' },
+        { value: 'custom', label: 'Custom range' }
+      ]
+    };
+  },
+
+  computed: {
+    comparisonRangeDisplay() {
+      const range = this.storeComputed.comparisonDateRange();
+      if (!range) return '';
+      return `${range.from} to ${range.to}`;
+    }
+  },
+
+  watch: {
+    'store.dateRange.comparisonMode': {
+      immediate: true,
+      handler(val) {
+        this.comparisonMode = val || 'none';
+      }
+    },
+    'store.dateRange.compareFrom': {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          const [year, month] = val.split('-').map(Number);
+          this.compareFromDate = new Date(year, month - 1, 1);
+        } else {
+          this.compareFromDate = null;
+        }
+      }
+    },
+    'store.dateRange.compareTo': {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          const [year, month] = val.split('-').map(Number);
+          this.compareToDate = new Date(year, month - 1, 1);
+        } else {
+          this.compareToDate = null;
+        }
+      }
+    }
+  },
+
+  methods: {
+    clearFilters() {
+      this.storeActions.clearFilters();
+    },
+
+    dateToYearMonth(date) {
+      if (!date) return null;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    },
+
+    onComparisonModeChange() {
+      this.storeActions.setDateRange({
+        comparisonMode: this.comparisonMode
+      });
+    },
+
+    onCustomDateChange() {
+      this.storeActions.setDateRange({
+        compareFrom: this.dateToYearMonth(this.compareFromDate),
+        compareTo: this.dateToYearMonth(this.compareToDate)
+      });
+    }
+  }
+};
+</script>
+
+<style>
+.filters-drawer {
+  --p-drawer-background: #ffffff;
+}
+
+.filter-section {
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filter-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.filter-actions {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid #e5e7eb;
+}
+
+.comparison-mode {
+  margin-top: var(--space-md);
+}
+
+.comparison-mode label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.comparison-select {
+  width: 100%;
+}
+
+.custom-comparison-dates {
+  margin-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.custom-comparison-dates .date-field label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.comparison-info {
+  margin-top: var(--space-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+</style>

@@ -6,9 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Marketing Dashboard</title>
 
-    <!-- PrimeVue Theme & Icons -->
-    <link rel="stylesheet" href="https://unpkg.com/primevue@3/resources/themes/lara-light-blue/theme.css" />
-    <link rel="stylesheet" href="https://unpkg.com/primevue@3/resources/primevue.min.css" />
+    <!-- PrimeIcons -->
     <link rel="stylesheet" href="https://unpkg.com/primeicons/primeicons.css" />
 
     <style>
@@ -121,6 +119,11 @@
         max-width: 1400px;
         margin: 0 auto;
         width: 100%;
+        overflow-y: auto;
+      }
+
+      .main-toolbar {
+        margin-bottom: var(--space-lg);
       }
 
       .card {
@@ -182,6 +185,9 @@
         </nav>
 
         <main class="app-main">
+          <div class="main-toolbar">
+            <app-sidebar></app-sidebar>
+          </div>
           <router-view></router-view>
         </main>
       </div>
@@ -193,23 +199,23 @@
     <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- PrimeVue -->
-    <script src="https://unpkg.com/primevue@3/core/core.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/datatable/datatable.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/column/column.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/dropdown/dropdown.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/multiselect/multiselect.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/calendar/calendar.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/card/card.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/button/button.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/progressspinner/progressspinner.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/skeleton/skeleton.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/chart/chart.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/tabview/tabview.min.js"></script>
-    <script src="https://unpkg.com/primevue@3/tabpanel/tabpanel.min.js"></script>
+    <!-- PrimeVue 4 -->
+    <script src="https://unpkg.com/primevue/umd/primevue.min.js"></script>
+    <script src="https://unpkg.com/@primeuix/themes/umd/aura.js"></script>
 
     <!-- Store -->
     <?!= include('store') ?>
+
+    <!-- Components -->
+    <?!= include('components/DateRangePicker') ?>
+    <?!= include('components/CampaignFilter') ?>
+    <?!= include('components/DeviceFilter') ?>
+    <?!= include('components/CampaignTypeFilter') ?>
+    <?!= include('components/MetricCard') ?>
+    <?!= include('components/LoadingSpinner') ?>
+    <?!= include('components/ErrorMessage') ?>
+    <?!= include('components/EmptyState') ?>
+    <?!= include('components/AppSidebar') ?>
 
     <!-- Views -->
     <?!= include('views/OverviewView') ?>
@@ -267,19 +273,44 @@
         }
       });
 
-      app.use(primevue.config.default);
-      app.component('DataTable', primevue.datatable);
-      app.component('Column', primevue.column);
-      app.component('Dropdown', primevue.dropdown);
-      app.component('MultiSelect', primevue.multiselect);
-      app.component('Calendar', primevue.calendar);
-      app.component('Card', primevue.card);
-      app.component('Button', primevue.button);
-      app.component('ProgressSpinner', primevue.progressspinner);
-      app.component('Skeleton', primevue.skeleton);
-      app.component('Chart', primevue.chart);
-      app.component('TabView', primevue.tabview);
-      app.component('TabPanel', primevue.tabpanel);
+      // PrimeVue 4 setup - force light mode
+      app.use(PrimeVue.Config, {
+        theme: {
+          preset: PrimeUIX.Themes.Aura,
+          options: {
+            darkModeSelector: false
+          }
+        }
+      });
+
+      // PrimeVue components
+      app.component('DataTable', PrimeVue.DataTable);
+      app.component('Column', PrimeVue.Column);
+      app.component('Select', PrimeVue.Select);
+      app.component('MultiSelect', PrimeVue.MultiSelect);
+      app.component('DatePicker', PrimeVue.DatePicker);
+      app.component('Card', PrimeVue.Card);
+      app.component('Button', PrimeVue.Button);
+      app.component('ProgressSpinner', PrimeVue.ProgressSpinner);
+      app.component('Skeleton', PrimeVue.Skeleton);
+      app.component('Tabs', PrimeVue.Tabs);
+      app.component('TabList', PrimeVue.TabList);
+      app.component('Tab', PrimeVue.Tab);
+      app.component('TabPanels', PrimeVue.TabPanels);
+      app.component('TabPanel', PrimeVue.TabPanel);
+      app.component('Drawer', PrimeVue.Drawer);
+      app.component('ToggleSwitch', PrimeVue.ToggleSwitch);
+
+      // Custom components
+      app.component('DateRangePicker', DateRangePicker);
+      app.component('CampaignFilter', CampaignFilter);
+      app.component('DeviceFilter', DeviceFilter);
+      app.component('CampaignTypeFilter', CampaignTypeFilter);
+      app.component('MetricCard', MetricCard);
+      app.component('LoadingSpinner', LoadingSpinner);
+      app.component('ErrorMessage', ErrorMessage);
+      app.component('EmptyState', EmptyState);
+      app.component('AppSidebar', AppSidebar);
 
       app.use(router);
 

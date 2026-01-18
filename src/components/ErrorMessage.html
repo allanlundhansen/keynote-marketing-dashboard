@@ -1,0 +1,42 @@
+<script>
+const ErrorMessage = {
+  name: 'ErrorMessage',
+  props: {
+    message: { type: String, default: 'Something went wrong.' },
+    retryLabel: { type: String, default: 'Retry' }
+  },
+  emits: ['retry'],
+  template: `
+    <div class="error-state">
+      <i class="pi pi-exclamation-triangle"></i>
+      <p>{{ message }}</p>
+      <Button :label="retryLabel" severity="secondary" @click="$emit('retry')" />
+    </div>
+  `
+};
+</script>
+
+<style>
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  gap: var(--space-md);
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-md);
+}
+
+.error-state i {
+  font-size: 2rem;
+  color: var(--color-error);
+}
+
+.error-state p {
+  margin: 0;
+  color: var(--color-error);
+  text-align: center;
+}
+</style>

@@ -1,0 +1,66 @@
+<script>
+const CampaignFilter = {
+  name: 'CampaignFilter',
+  inject: ['store', 'storeActions', 'storeComputed'],
+  template: `
+    <div class="filter-field">
+      <label>Campaigns</label>
+      <MultiSelect
+        v-model="selectedCampaigns"
+        :options="storeComputed.uniqueCampaigns()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="All Campaigns"
+        :maxSelectedLabels="1"
+        selectedItemsLabel="{0} campaigns"
+        display="comma"
+        :filter="true"
+        filterPlaceholder="Search campaigns"
+        @change="onChange"
+        class="filter-multiselect"
+      />
+    </div>
+  `,
+
+  data() {
+    return {
+      selectedCampaigns: []
+    };
+  },
+
+  watch: {
+    'store.filters.campaigns': {
+      immediate: true,
+      handler(val) {
+        this.selectedCampaigns = val || [];
+      }
+    }
+  },
+
+  methods: {
+    onChange() {
+      this.storeActions.setFilters({
+        campaigns: this.selectedCampaigns
+      });
+    }
+  }
+};
+</script>
+
+<style>
+.filter-field {
+  width: 100%;
+}
+
+.filter-field label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.filter-multiselect {
+  width: 100%;
+}
+</style>

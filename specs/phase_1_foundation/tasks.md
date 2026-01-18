@@ -36,9 +36,8 @@
 ### AdsService.js
 
 - [x] Basic implementation reading from sheets
-- [ ] Update to read from `Summary_Monthly` for dashboard
-- [ ] Update to read from `Summary_Campaigns` for campaign list
-- [ ] Add drill-down methods for raw data (keywords, search terms)
+
+> **Note:** Dashboard data fetching functions moved to Phase 2 (Dashboard Frontend).
 
 ### AnalyticsService.js
 
@@ -85,13 +84,8 @@
 ### SheetManager.js
 
 - [x] Basic sheet operations (find, create, append)
-- [ ] Update `setupSheets()` for new 11-sheet structure:
-  - Raw Ads: `Raw_Ads_Daily`, `Raw_Ads_Keywords`, `Raw_Ads_SearchTerms`, `Raw_Ads_Geographic`
-  - Raw GA4: `Raw_GA4_Sessions`, `Raw_GA4_Pages`, `Raw_GA4_Events`
-  - Summary: `Summary_Monthly`, `Summary_Events`, `Summary_Campaigns`
-  - System: `System_Logs`
-- [ ] Add sheet-specific header definitions
-- [ ] Add `overwriteSheet()` method for summary sheets
+
+> **Note:** Sheets are created on-demand by AdsScript, AnalyticsService, and AggregationService. A formal `setupSheets()` function is not required.
 
 ### Config.js
 
@@ -102,31 +96,9 @@
   - Summary: `Summary_Monthly`, `Summary_Campaigns`
   - System: `System_Logs`
 
-## Frontend Implementation
-
-### Dashboard UI (`index.html`)
-
-- [x] Basic HTML skeleton
-- [ ] Add CSS styling for metric cards
-- [ ] Implement responsive grid layout
-- [ ] Add loading state indicator
-- [ ] Add error state handling
-- [ ] Add "data as of" timestamp display
-
-### Client-Side Logic
-
-- [ ] Implement `google.script.run.getDashboardData()` call
-- [ ] Render overall performance metrics (Spend, Clicks, Impressions, Sessions, Conversions)
-- [ ] Implement YoY comparison view (current month vs same month last year)
-- [ ] Implement campaign breakdown view
-- [ ] Implement network type breakdown (SEARCH vs DISPLAY)
-- [ ] Implement device breakdown (DESKTOP vs MOBILE vs TABLET)
-- [ ] Add drill-down to keyword detail
-- [ ] Add drill-down to search term detail
-- [ ] Add landing page performance view (from Raw_GA4_Pages)
-- [ ] Add conversion event selector (let user pick which events = "conversion" from Raw_GA4_Events)
-
 ## Verification & Deployment
+
+> **Note:** Frontend implementation moved to Phase 2 (Dashboard Frontend). See `specs/phase_2_dashboard/`.
 
 ### Data Pipeline Verification
 
@@ -143,14 +115,6 @@
 - [ ] Verify Summary_Campaigns is computed correctly
 - [ ] Spot-check 3 random dates against Google Ads UI
 - [ ] Verify Summary totals match Raw totals for same period
-
-### Web App Deployment
-
-- [ ] Deploy as Test Deployment
-- [ ] Verify dashboard loads with real data
-- [ ] Verify load time < 2 seconds
-- [ ] Verify YoY comparison works
-- [ ] Verify drill-down views work
 
 ### Git
 

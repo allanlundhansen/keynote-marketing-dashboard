@@ -145,7 +145,12 @@ This is why GA4 data is split into three tables (Sessions, Pages, Events) - each
 │   └── index.html                # Dashboard frontend
 ├── specs/                        # Specification documentation
 │   ├── implementation_plan.md    # This file (high-level roadmap)
-│   └── phase_1_foundation/       # Phase 1 detailed specs
+│   ├── phase_1_foundation/       # Phase 1 detailed specs
+│   │   ├── requirements.md
+│   │   ├── design.md
+│   │   ├── tasks.md
+│   │   └── ADR.md
+│   └── phase_2_dashboard/        # Phase 2 detailed specs
 │       ├── requirements.md
 │       ├── design.md
 │       ├── tasks.md
@@ -185,11 +190,11 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 
 ## Implementation Phases
 
-### Phase 1: Foundation (MVP) — `specs/phase_1_foundation/`
+### Phase 1: Data Foundation — `specs/phase_1_foundation/`
 
-**Status**: 🟡 In Progress
+**Status**: 🟡 In Progress (data pipeline complete, verification pending)
 
-**Goal**: Establish core infrastructure with two-tier data model (raw + summary) and verify data pipelines work with fast dashboard performance.
+**Goal**: Establish core data infrastructure with two-tier data model (raw + summary) and verify data pipelines work correctly.
 
 | Component | Status |
 |-----------|--------|
@@ -200,10 +205,11 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 | Raw Ads data sheets (4 sheets) | ✅ Populated |
 | Raw GA4 data sheets (3 sheets) | ✅ Populated (2022-2026) |
 | Daily triggers (Ads 3AM, GA4 4AM) | ✅ Configured |
-| Summary sheets (2 sheets) | ⏳ Pending |
-| Nightly aggregation job | ⏳ Pending |
-| Basic dashboard UI | 🟡 Skeleton built |
-| Web App deployment | ⏳ Pending |
+| Nightly aggregation job | ✅ Complete (5AM trigger) |
+| Summary sheets (3 sheets) | ✅ Populated |
+| Data verification | ⏳ Pending |
+
+> **Note**: Frontend/dashboard UI moved to Phase 2.
 
 **Data Model** (see `specs/phase_1_foundation/design.md` for full schema):
 
@@ -226,13 +232,48 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 
 ---
 
-### Phase 2: Advanced Funnel Visualization & Diagnostics
+### Phase 2: Dashboard Frontend — `specs/phase_2_dashboard/`
 
 **Status**: ⏳ Not Started
 
-**Goal**: Build on the Phase 1 data infrastructure to provide deeper funnel insights and diagnostic tools.
+**Goal**: Build a web-based dashboard UI that visualizes marketing performance data from the summary sheets created in Phase 1.
 
-**Note**: Phase 1 establishes the *data foundation* for funnel analysis (GA4 Sessions, Pages, Events tables). Phase 2 focuses on *visualization and diagnostics* using that data.
+| Component | Status |
+|-----------|--------|
+| Vue 3 + Vue Router setup | ⏳ Pending |
+| Backend API functions | ⏳ Pending |
+| Dashboard Home (summary cards) | ⏳ Pending |
+| Trend Analysis view | ⏳ Pending |
+| Campaign Analysis view | ⏳ Pending |
+| Device/Campaign Type views | ⏳ Pending |
+| Geographic Analysis view | ⏳ Pending |
+| Conversion configuration | ⏳ Pending |
+| Drill-down views (Keywords, Search Terms, Landing Pages) | ⏳ Pending |
+| Web App deployment | ⏳ Pending |
+
+**Tech Stack**:
+- Vue 3 via CDN (no build tooling)
+- Vue Router with hash mode for browser history/deep linking
+- PrimeVue components (DataTable, Dropdown, etc.)
+- Chart.js for visualizations
+
+**Key Features**:
+- Performance summary cards with YoY comparison
+- Trend charts for time-series analysis
+- Filterable views by Campaign, Device, Campaign Type
+- Configurable conversion event selection
+- Drill-down to keyword, search term, and landing page detail
+- Simplified mobile view (summary cards only)
+
+**Detailed specs**: See `specs/phase_2_dashboard/`
+
+---
+
+### Phase 3: Advanced Funnel Visualization & Diagnostics
+
+**Status**: ⏳ Not Started
+
+**Goal**: Build on the Phase 2 dashboard to provide deeper funnel insights and diagnostic tools.
 
 **Planned Features**:
 - Visual funnel diagram: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
@@ -242,23 +283,7 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 - Diagnostic alerts: "Campaign X has high clicks but low engagement - check landing page"
 - A/B landing page insights (if multiple pages receive traffic from same campaign)
 
-**Specs**: `specs/phase_2_funnel/` (to be created)
-
----
-
-### Phase 3: Historical Comparison
-
-**Status**: ⏳ Not Started
-
-**Goal**: Enable Year-over-Year analysis and trend visualization.
-
-**Planned Features**:
-- Date range selector (custom periods)
-- YoY metric calculations (built into Summary_Monthly)
-- Trend charts (weekly/monthly)
-- Anomaly detection and highlighting
-
-**Specs**: `specs/phase_3_historical/` (to be created)
+**Specs**: `specs/phase_3_funnel/` (to be created)
 
 ---
 
@@ -266,13 +291,13 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 
 **Status**: ⏳ Not Started
 
-**Goal**: Production-ready system with automated refreshes and alerts.
+**Goal**: Production-ready system with automated alerts and refinements.
 
 **Planned Features**:
-- Scheduled daily data refresh (time-driven triggers)
-- Email alerts for significant changes
-- Dashboard UI refinements
-- Error recovery and retry logic
+- Email alerts for significant changes (anomaly detection)
+- Dashboard UI refinements based on usage feedback
+- Error recovery and retry logic improvements
+- Export functionality (if needed)
 
 **Specs**: `specs/phase_4_automation/` (to be created)
 

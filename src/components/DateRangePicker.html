@@ -55,28 +55,29 @@ const DateRangePicker = {
   computed: {
     presets() {
       const now = new Date();
-      const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      // Use last complete month as the end date (exclude current month)
+      const lastCompleteMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
       return [
         {
           label: 'Last 3 mo',
-          from: new Date(now.getFullYear(), now.getMonth() - 2, 1),
-          to: currentMonth
+          from: new Date(lastCompleteMonth.getFullYear(), lastCompleteMonth.getMonth() - 2, 1),
+          to: lastCompleteMonth
         },
         {
           label: 'Last 6 mo',
-          from: new Date(now.getFullYear(), now.getMonth() - 5, 1),
-          to: currentMonth
+          from: new Date(lastCompleteMonth.getFullYear(), lastCompleteMonth.getMonth() - 5, 1),
+          to: lastCompleteMonth
         },
         {
           label: 'Last 12 mo',
-          from: new Date(now.getFullYear(), now.getMonth() - 11, 1),
-          to: currentMonth
+          from: new Date(lastCompleteMonth.getFullYear(), lastCompleteMonth.getMonth() - 11, 1),
+          to: lastCompleteMonth
         },
         {
           label: 'This year',
           from: new Date(now.getFullYear(), 0, 1),
-          to: currentMonth
+          to: lastCompleteMonth
         },
         {
           label: 'Last year',
@@ -128,6 +129,8 @@ const DateRangePicker = {
     },
 
     applyPreset(preset) {
+      console.log('applyPreset - from:', preset.from, '- to:', preset.to);
+      console.log('applyPreset - fromYM:', this.dateToYearMonth(preset.from), '- toYM:', this.dateToYearMonth(preset.to));
       this.fromDate = preset.from;
       this.toDate = preset.to;
       this.storeActions.setDateRange({

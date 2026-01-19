@@ -1,50 +1,217 @@
 <script>
 const OverviewView = {
   inject: ['store', 'storeActions', 'storeComputed'],
+
+  data() {
+    return {
+      trendChartInstance: null
+    };
+  },
+
   template: `
     <div>
       <LoadingSpinner v-if="store.ui.isLoading" message="Loading dashboard data..." />
       <ErrorMessage v-else-if="store.ui.error" :message="store.ui.error" @retry="retry" />
       <div v-else>
-        <div class="metrics-grid">
-          <MetricCard
-            label="Total Cost"
-            :value="metrics.cost"
-            :previousValue="comparisonMetrics?.cost"
-            format="currency"
-            :precision="0"
-            :invertTrend="true"
-          />
-          <MetricCard
-            label="Clicks"
-            :value="metrics.clicks"
-            :previousValue="comparisonMetrics?.clicks"
-          />
-          <MetricCard
-            label="Impressions"
-            :value="metrics.impressions"
-            :previousValue="comparisonMetrics?.impressions"
-          />
-          <MetricCard
-            label="Sessions"
-            :value="metrics.sessions"
-            :previousValue="comparisonMetrics?.sessions"
-          />
-          <MetricCard
-            label="Conversions"
-            :value="metrics.conversions"
-            :previousValue="comparisonMetrics?.conversions"
-          />
-          <MetricCard
-            label="CTR"
-            :value="metrics.ctr"
-            :previousValue="comparisonMetrics?.ctr"
-            format="percent"
-            :precision="2"
-          />
-        </div>
+        <!-- Section 1: Primary KPIs (4 large cards) -->
+        <section class="overview-section">
+          <h2 class="section-title">Key Performance Indicators</h2>
+          <div class="primary-kpis-grid">
+            <MetricCard
+              label="Total Cost"
+              :value="primaryMetrics.cost"
+              :previousValue="comparisonPrimaryMetrics?.cost"
+              format="currency"
+              :precision="0"
+              :invertTrend="true"
+              class="primary-kpi-card"
+            />
+            <MetricCard
+              label="Clicks"
+              :value="primaryMetrics.clicks"
+              :previousValue="comparisonPrimaryMetrics?.clicks"
+              class="primary-kpi-card"
+            />
+            <MetricCard
+              label="Avg CPC"
+              :value="primaryMetrics.avgCPC"
+              :previousValue="comparisonPrimaryMetrics?.avgCPC"
+              format="currency"
+              :precision="2"
+              :invertTrend="true"
+              class="primary-kpi-card"
+            />
+            <MetricCard
+              label="Engagement Rate"
+              :value="primaryMetrics.engagementRate"
+              :previousValue="comparisonPrimaryMetrics?.engagementRate"
+              format="percent"
+              :precision="1"
+              class="primary-kpi-card"
+            />
+          </div>
+        </section>
 
-        <div class="card" style="margin-top: var(--space-lg);">
+        <!-- Section 2: Funnel Visualization -->
+        <section class="overview-section">
+          <h2 class="section-title">Marketing Funnel</h2>
+          <div class="funnel-container">
+            <!-- Stage 1: Impressions -->
+            <div class="funnel-chevron impressions-chevron" :style="{ flex: funnelStages.impressions.flex }">
+              <div class="chevron-content">
+                <span class="chevron-label">Impressions</span>
+                <span class="chevron-value">{{ formatNumber(funnelStages.impressions.value) }}</span>
+                <span v-if="funnelComparison" class="chevron-change" :class="getValueChangeClass(funnelStages.impressions.value, comparisonFunnelStages?.impressions?.value)">
+                  {{ formatValueChange(funnelStages.impressions.value, comparisonFunnelStages?.impressions?.value) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Rate: CTR -->
+            <div class="funnel-rate-between">
+              <span class="rate-value">{{ formatPercent(funnelStages.clicks.rate) }}</span>
+              <span class="rate-label">CTR</span>
+              <span v-if="funnelComparison" class="rate-change" :class="getRateChangeClass(funnelStages.clicks.rate, comparisonFunnelStages?.clicks?.rate)">
+                {{ formatRateChange(funnelStages.clicks.rate, comparisonFunnelStages?.clicks?.rate) }}
+              </span>
+            </div>
+
+            <!-- Stage 2: Clicks -->
+            <div class="funnel-chevron clicks-chevron" :style="{ flex: funnelStages.clicks.flex }">
+              <div class="chevron-content">
+                <span class="chevron-label">Clicks</span>
+                <span class="chevron-value">{{ formatNumber(funnelStages.clicks.value) }}</span>
+                <span v-if="funnelComparison" class="chevron-change" :class="getValueChangeClass(funnelStages.clicks.value, comparisonFunnelStages?.clicks?.value)">
+                  {{ formatValueChange(funnelStages.clicks.value, comparisonFunnelStages?.clicks?.value) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Rate: Session Rate -->
+            <div class="funnel-rate-between">
+              <span class="rate-value">{{ formatPercent(funnelStages.sessions.rate) }}</span>
+              <span class="rate-label">Session Rate</span>
+              <span v-if="funnelComparison" class="rate-change" :class="getRateChangeClass(funnelStages.sessions.rate, comparisonFunnelStages?.sessions?.rate)">
+                {{ formatRateChange(funnelStages.sessions.rate, comparisonFunnelStages?.sessions?.rate) }}
+              </span>
+            </div>
+
+            <!-- Stage 3: Sessions -->
+            <div class="funnel-chevron sessions-chevron" :style="{ flex: funnelStages.sessions.flex }">
+              <div class="chevron-content">
+                <span class="chevron-label">Sessions</span>
+                <span class="chevron-value">{{ formatNumber(funnelStages.sessions.value) }}</span>
+                <span v-if="funnelComparison" class="chevron-change" :class="getValueChangeClass(funnelStages.sessions.value, comparisonFunnelStages?.sessions?.value)">
+                  {{ formatValueChange(funnelStages.sessions.value, comparisonFunnelStages?.sessions?.value) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Rate: Engagement Rate -->
+            <div class="funnel-rate-between">
+              <span class="rate-value">{{ formatPercent(funnelStages.engaged.rate) }}</span>
+              <span class="rate-label">Engage Rate</span>
+              <span v-if="funnelComparison" class="rate-change" :class="getRateChangeClass(funnelStages.engaged.rate, comparisonFunnelStages?.engaged?.rate)">
+                {{ formatRateChange(funnelStages.engaged.rate, comparisonFunnelStages?.engaged?.rate) }}
+              </span>
+            </div>
+
+            <!-- Stage 4: Engaged Sessions -->
+            <div class="funnel-chevron engaged-chevron" :style="{ flex: funnelStages.engaged.flex }">
+              <div class="chevron-content">
+                <span class="chevron-label">Engaged</span>
+                <span class="chevron-value">{{ formatNumber(funnelStages.engaged.value) }}</span>
+                <span v-if="funnelComparison" class="chevron-change" :class="getValueChangeClass(funnelStages.engaged.value, comparisonFunnelStages?.engaged?.value)">
+                  {{ formatValueChange(funnelStages.engaged.value, comparisonFunnelStages?.engaged?.value) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Rate: Conversion Rate -->
+            <div class="funnel-rate-between">
+              <span class="rate-value">{{ formatPercent(funnelStages.conversions.rate) }}</span>
+              <span class="rate-label">Conv Rate</span>
+              <span v-if="funnelComparison" class="rate-change" :class="getRateChangeClass(funnelStages.conversions.rate, comparisonFunnelStages?.conversions?.rate)">
+                {{ formatRateChange(funnelStages.conversions.rate, comparisonFunnelStages?.conversions?.rate) }}
+              </span>
+            </div>
+
+            <!-- Stage 5: Conversions -->
+            <div class="funnel-chevron conversions-chevron" :style="{ flex: funnelStages.conversions.flex }">
+              <div class="chevron-content">
+                <span class="chevron-label">Conversions</span>
+                <span class="chevron-value">{{ formatNumber(funnelStages.conversions.value) }}</span>
+                <span v-if="funnelComparison" class="chevron-change" :class="getValueChangeClass(funnelStages.conversions.value, comparisonFunnelStages?.conversions?.value)">
+                  {{ formatValueChange(funnelStages.conversions.value, comparisonFunnelStages?.conversions?.value) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 3: Supporting Metrics (6 smaller cards) -->
+        <section class="overview-section">
+          <h2 class="section-title">Supporting Metrics</h2>
+          <div class="supporting-metrics-grid">
+            <MetricCard
+              label="Impressions"
+              :value="supportingMetrics.impressions"
+              :previousValue="comparisonSupportingMetrics?.impressions"
+              class="supporting-metric-card"
+            />
+            <MetricCard
+              label="CTR"
+              :value="supportingMetrics.ctr"
+              :previousValue="comparisonSupportingMetrics?.ctr"
+              format="percent"
+              :precision="2"
+              class="supporting-metric-card"
+            />
+            <MetricCard
+              label="Sessions"
+              :value="supportingMetrics.sessions"
+              :previousValue="comparisonSupportingMetrics?.sessions"
+              class="supporting-metric-card"
+            />
+            <MetricCard
+              label="Engaged Sessions"
+              :value="supportingMetrics.engagedSessions"
+              :previousValue="comparisonSupportingMetrics?.engagedSessions"
+              class="supporting-metric-card"
+            />
+            <MetricCard
+              label="Cost / Session"
+              :value="supportingMetrics.costPerSession"
+              :previousValue="comparisonSupportingMetrics?.costPerSession"
+              format="currency"
+              :precision="2"
+              :invertTrend="true"
+              class="supporting-metric-card"
+            />
+            <MetricCard
+              label="Cost / Engaged Session"
+              :value="supportingMetrics.costPerEngagedSession"
+              :previousValue="comparisonSupportingMetrics?.costPerEngagedSession"
+              format="currency"
+              :precision="2"
+              :invertTrend="true"
+              class="supporting-metric-card"
+            />
+          </div>
+        </section>
+
+        <!-- Section 4: Trend Sparkline -->
+        <section class="overview-section">
+          <h2 class="section-title">Cost & Clicks Trend</h2>
+          <div class="trend-chart-container">
+            <canvas ref="trendChart" id="trendChart"></canvas>
+          </div>
+        </section>
+
+        <!-- Placeholder for Section 5: Quick Insights (coming next) -->
+
+        <!-- Debug Info (temporary) -->
+        <div class="card debug-card" style="margin-top: var(--space-lg);">
           <h3>Debug Info</h3>
           <p>Date range: {{ store.dateRange.from }} to {{ store.dateRange.to }}</p>
           <p>Comparison mode: {{ store.dateRange.comparisonMode }}</p>
@@ -52,25 +219,47 @@ const OverviewView = {
             Comparison range: {{ storeComputed.comparisonDateRange()?.from }} to {{ storeComputed.comparisonDateRange()?.to }}
           </p>
           <p>Filtered rows: {{ storeComputed.filteredMonthly().length }}</p>
+          <p>Engaged Sessions: {{ rawMetrics.engagedSessions }}</p>
+          <p>Sessions: {{ rawMetrics.sessions }}</p>
         </div>
       </div>
     </div>
   `,
 
   computed: {
-    metrics() {
+    // Raw aggregated metrics from filtered data
+    rawMetrics() {
       const data = this.storeComputed.filteredMonthly();
+      const conversions = this.storeComputed.totalConversions();
+      const cost = data.reduce((sum, r) => sum + (r.Cost || 0), 0);
+      const clicks = data.reduce((sum, r) => sum + (r.Clicks || 0), 0);
+      const impressions = data.reduce((sum, r) => sum + (r.Impressions || 0), 0);
+      const sessions = data.reduce((sum, r) => sum + (r.Sessions || 0), 0);
+      const engagedSessions = data.reduce((sum, r) => sum + (r.EngagedSessions || 0), 0);
+
       return {
-        cost: data.reduce((sum, r) => sum + (r.Cost || 0), 0),
-        clicks: data.reduce((sum, r) => sum + (r.Clicks || 0), 0),
-        impressions: data.reduce((sum, r) => sum + (r.Impressions || 0), 0),
-        sessions: data.reduce((sum, r) => sum + (r.Sessions || 0), 0),
-        conversions: this.storeComputed.totalConversions(),
-        ctr: this.calculateCTR(data)
+        cost,
+        clicks,
+        impressions,
+        sessions,
+        engagedSessions,
+        conversions
       };
     },
 
-    comparisonMetrics() {
+    // Primary KPIs: Cost, Clicks, Avg CPC, Engagement Rate
+    primaryMetrics() {
+      const { cost, clicks, sessions, engagedSessions } = this.rawMetrics;
+      return {
+        cost,
+        clicks,
+        avgCPC: clicks > 0 ? cost / clicks : 0,
+        engagementRate: sessions > 0 ? engagedSessions / sessions : 0
+      };
+    },
+
+    // Comparison raw metrics
+    comparisonRawMetrics() {
       const range = this.storeComputed.comparisonDateRange();
       if (!range) return null;
 
@@ -106,30 +295,731 @@ const OverviewView = {
         clicks: data.reduce((sum, r) => sum + (r.Clicks || 0), 0),
         impressions: data.reduce((sum, r) => sum + (r.Impressions || 0), 0),
         sessions: data.reduce((sum, r) => sum + (r.Sessions || 0), 0),
-        conversions: events.reduce((sum, r) => sum + (r.EventCount || 0), 0),
-        ctr: this.calculateCTR(data)
+        engagedSessions: data.reduce((sum, r) => sum + (r.EngagedSessions || 0), 0),
+        conversions: events.reduce((sum, r) => sum + (r.EventCount || 0), 0)
+      };
+    },
+
+    // Comparison Primary KPIs
+    comparisonPrimaryMetrics() {
+      const raw = this.comparisonRawMetrics;
+      if (!raw) return null;
+
+      const { cost, clicks, sessions, engagedSessions } = raw;
+      return {
+        cost,
+        clicks,
+        avgCPC: clicks > 0 ? cost / clicks : 0,
+        engagementRate: sessions > 0 ? engagedSessions / sessions : 0
+      };
+    },
+
+    // Supporting Metrics: Impressions, CTR, Sessions, Engaged Sessions, Cost/Session, Cost/Engaged Session
+    supportingMetrics() {
+      const { cost, clicks, impressions, sessions, engagedSessions } = this.rawMetrics;
+      return {
+        impressions,
+        ctr: impressions > 0 ? clicks / impressions : 0,
+        sessions,
+        engagedSessions,
+        costPerSession: sessions > 0 ? cost / sessions : 0,
+        costPerEngagedSession: engagedSessions > 0 ? cost / engagedSessions : 0
+      };
+    },
+
+    // Comparison Supporting Metrics
+    comparisonSupportingMetrics() {
+      const raw = this.comparisonRawMetrics;
+      if (!raw) return null;
+
+      const { cost, clicks, impressions, sessions, engagedSessions } = raw;
+      return {
+        impressions,
+        ctr: impressions > 0 ? clicks / impressions : 0,
+        sessions,
+        engagedSessions,
+        costPerSession: sessions > 0 ? cost / sessions : 0,
+        costPerEngagedSession: engagedSessions > 0 ? cost / engagedSessions : 0
+      };
+    },
+
+    // Funnel stages with values, rates, and flex sizing
+    funnelStages() {
+      const { impressions, clicks, sessions, engagedSessions, conversions } = this.rawMetrics;
+
+      // Calculate rates (conversion from previous stage)
+      const ctr = impressions > 0 ? clicks / impressions : 0;
+      const clickToSession = clicks > 0 ? sessions / clicks : 0;
+      const sessionToEngaged = sessions > 0 ? engagedSessions / sessions : 0;
+      const engagedToConversion = engagedSessions > 0 ? conversions / engagedSessions : 0;
+
+      // Calculate flex values relative to previous stage
+      // Each stage is sized based on its conversion rate from previous
+      // Formula: flex = previous_flex * (0.3 + 0.7 * rate) - min 30% of previous
+      // With a minimum floor of 0.25 so text always fits
+      const minFlex = 0.25;
+      const relativeFlex = (prevFlex, rate) => Math.max(minFlex, prevFlex * (0.3 + 0.7 * Math.min(rate, 1)));
+
+      const impressionsFlex = 1;
+      const clicksFlex = relativeFlex(impressionsFlex, ctr);
+      const sessionsFlex = relativeFlex(clicksFlex, clickToSession);
+      const engagedFlex = relativeFlex(sessionsFlex, sessionToEngaged);
+      const conversionsFlex = relativeFlex(engagedFlex, engagedToConversion);
+
+      return {
+        impressions: {
+          value: impressions,
+          flex: impressionsFlex,
+          rate: null // No rate for first stage
+        },
+        clicks: {
+          value: clicks,
+          flex: clicksFlex,
+          rate: ctr
+        },
+        sessions: {
+          value: sessions,
+          flex: sessionsFlex,
+          rate: clickToSession
+        },
+        engaged: {
+          value: engagedSessions,
+          flex: engagedFlex,
+          rate: sessionToEngaged
+        },
+        conversions: {
+          value: conversions,
+          flex: conversionsFlex,
+          rate: engagedToConversion
+        }
+      };
+    },
+
+    // Comparison funnel stages
+    comparisonFunnelStages() {
+      const raw = this.comparisonRawMetrics;
+      if (!raw) return null;
+
+      const { impressions, clicks, sessions, engagedSessions, conversions } = raw;
+
+      const ctr = impressions > 0 ? clicks / impressions : 0;
+      const clickToSession = clicks > 0 ? sessions / clicks : 0;
+      const sessionToEngaged = sessions > 0 ? engagedSessions / sessions : 0;
+      const engagedToConversion = engagedSessions > 0 ? conversions / engagedSessions : 0;
+
+      return {
+        impressions: { value: impressions, rate: null },
+        clicks: { value: clicks, rate: ctr },
+        sessions: { value: sessions, rate: clickToSession },
+        engaged: { value: engagedSessions, rate: sessionToEngaged },
+        conversions: { value: conversions, rate: engagedToConversion }
+      };
+    },
+
+    // Whether to show comparison data in funnel
+    funnelComparison() {
+      return this.comparisonFunnelStages !== null;
+    },
+
+    // Trend chart data - monthly Cost and Clicks
+    trendChartData() {
+      const monthly = this.storeComputed.filteredMonthly();
+
+      // Group by YearMonth
+      const byMonth = {};
+      monthly.forEach(row => {
+        if (!byMonth[row.YearMonth]) {
+          byMonth[row.YearMonth] = { cost: 0, clicks: 0 };
+        }
+        byMonth[row.YearMonth].cost += row.Cost || 0;
+        byMonth[row.YearMonth].clicks += row.Clicks || 0;
+      });
+
+      // Sort by month and extract arrays
+      const sortedMonths = Object.keys(byMonth).sort();
+      return {
+        labels: sortedMonths.map((m, i) => `M${i + 1}`),
+        actualLabels: sortedMonths,
+        cost: sortedMonths.map(m => byMonth[m].cost),
+        clicks: sortedMonths.map(m => byMonth[m].clicks)
+      };
+    },
+
+    // Comparison trend chart data - aligned to current data's months
+    comparisonTrendChartData() {
+      const mode = this.store.dateRange.comparisonMode;
+      if (mode === 'none') return null;
+
+      const currentData = this.trendChartData;
+      if (!currentData || !currentData.actualLabels.length) return null;
+
+      // Helper to calculate comparison month for a given current month
+      const getComparisonMonth = (currentYM) => {
+        const d = new Date(currentYM + '-01');
+        if (mode === 'lastYear') {
+          d.setFullYear(d.getFullYear() - 1);
+        } else if (mode === 'previous') {
+          const fromParts = this.store.dateRange.from.split('-').map(Number);
+          const toParts = this.store.dateRange.to.split('-').map(Number);
+          const monthsInRange = (toParts[0] - fromParts[0]) * 12 + (toParts[1] - fromParts[1]) + 1;
+          d.setMonth(d.getMonth() - monthsInRange);
+        } else if (mode === 'custom') {
+          // Calculate offset between current from and comparison from
+          const currentFrom = this.store.dateRange.from.split('-').map(Number);
+          const compFrom = this.store.dateRange.compareFrom.split('-').map(Number);
+          const monthOffset = (currentFrom[0] - compFrom[0]) * 12 + (currentFrom[1] - compFrom[1]);
+          d.setMonth(d.getMonth() - monthOffset);
+        }
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      };
+
+      // Build lookup of all comparison period data
+      const monthly = this.store.data.monthly.filter(row => {
+        if (this.store.filters.campaigns.length > 0) {
+          if (!this.store.filters.campaigns.includes(String(row.CampaignId))) return false;
+        }
+        if (this.store.filters.devices.length > 0) {
+          if (!this.store.filters.devices.includes(row.Device)) return false;
+        }
+        if (this.store.filters.campaignTypes.length > 0) {
+          if (!this.store.filters.campaignTypes.includes(row.CampaignType)) return false;
+        }
+        return true;
+      });
+
+      const byMonth = {};
+      monthly.forEach(row => {
+        const ym = this.normalizeYearMonth(row.YearMonth);
+        if (!byMonth[ym]) {
+          byMonth[ym] = { cost: 0, clicks: 0 };
+        }
+        byMonth[ym].cost += row.Cost || 0;
+        byMonth[ym].clicks += row.Clicks || 0;
+      });
+
+      // Build aligned arrays: for each current month, get the corresponding comparison month's data
+      const compLabels = [];
+      const compCost = [];
+      const compClicks = [];
+
+      console.log('comparisonTrendChartData - byMonth keys:', Object.keys(byMonth));
+
+      currentData.actualLabels.forEach(currentYM => {
+        const normalizedCurrentYM = this.normalizeYearMonth(currentYM);
+        const compYM = getComparisonMonth(normalizedCurrentYM);
+        compLabels.push(compYM);
+        const data = byMonth[compYM] || { cost: 0, clicks: 0 };
+        console.log(`Lookup: ${normalizedCurrentYM} -> ${compYM}, found:`, data);
+        compCost.push(data.cost);
+        compClicks.push(data.clicks);
+      });
+
+      return {
+        labels: compLabels,
+        cost: compCost,
+        clicks: compClicks
       };
     }
   },
 
+  mounted() {
+    this.$nextTick(() => {
+      this.createTrendChart();
+    });
+  },
+
+  watch: {
+    trendChartData: {
+      handler() {
+        this.$nextTick(() => {
+          this.createTrendChart();
+        });
+      },
+      deep: true
+    },
+    comparisonTrendChartData: {
+      handler() {
+        this.$nextTick(() => {
+          this.createTrendChart();
+        });
+      },
+      deep: true
+    }
+  },
+
   methods: {
+    // Helper to normalize YearMonth (handles both "YYYY-MM" and ISO date strings)
+    // Uses UTC to avoid timezone issues with end-of-month dates
+    normalizeYearMonth(ym) {
+      if (!ym) return null;
+      // If it's already YYYY-MM format
+      if (typeof ym === 'string' && /^\d{4}-\d{2}$/.test(ym)) return ym;
+      // If it's an ISO date string or Date object, use UTC to avoid timezone rollover
+      const d = new Date(ym);
+      if (isNaN(d.getTime())) return null;
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    },
+
     retry() {
       this.storeActions.loadDashboardData();
     },
 
-    calculateCTR(data) {
-      const clicks = data.reduce((sum, r) => sum + (r.Clicks || 0), 0);
-      const impressions = data.reduce((sum, r) => sum + (r.Impressions || 0), 0);
-      return impressions > 0 ? clicks / impressions : 0;
+    formatNumber(value) {
+      if (value === null || value === undefined) return '—';
+      return new Intl.NumberFormat('en-US').format(Math.round(value));
+    },
+
+    formatPercent(value) {
+      if (value === null || value === undefined) return '—';
+      return (value * 100).toFixed(1) + '%';
+    },
+
+    formatRateChange(current, previous) {
+      if (current === null || previous === null || previous === undefined || previous === 0) return '';
+      const pctChange = ((current - previous) / previous) * 100;
+      const sign = pctChange >= 0 ? '▲' : '▼';
+      return `${sign} ${Math.abs(pctChange).toFixed(1)}%`;
+    },
+
+    getRateChangeClass(current, previous) {
+      if (current === null || previous === null || previous === undefined) return '';
+      const diff = current - previous;
+      if (diff > 0.001) return 'change-up';
+      if (diff < -0.001) return 'change-down';
+      return 'change-neutral';
+    },
+
+    formatValueChange(current, previous) {
+      if (current === null || previous === null || previous === undefined || previous === 0) return '';
+      const pctChange = ((current - previous) / previous) * 100;
+      const sign = pctChange >= 0 ? '▲' : '▼';
+      return `${sign} ${Math.abs(pctChange).toFixed(1)}%`;
+    },
+
+    getValueChangeClass(current, previous) {
+      if (current === null || previous === null || previous === undefined || previous === 0) return '';
+      const diff = current - previous;
+      if (diff > 0) return 'change-up';
+      if (diff < 0) return 'change-down';
+      return 'change-neutral';
+    },
+
+    createTrendChart() {
+      const canvas = this.$refs.trendChart;
+      if (!canvas) {
+        console.log('createTrendChart: canvas not found');
+        return;
+      }
+
+      // Destroy any existing chart on this canvas
+      const existingChart = Chart.getChart(canvas);
+      if (existingChart) {
+        existingChart.destroy();
+      }
+      this.trendChartInstance = null;
+
+      const currentData = this.trendChartData;
+      const comparisonData = this.comparisonTrendChartData;
+
+      console.log('Chart - currentData labels:', currentData.actualLabels);
+      console.log('Chart - currentData cost:', currentData.cost);
+      console.log('Chart - comparisonData labels:', comparisonData?.labels);
+      console.log('Chart - comparisonData cost:', comparisonData?.cost);
+      console.log('Chart - comparison range:', this.storeComputed.comparisonDateRange());
+
+      // Determine comparison label based on mode
+      const comparisonLabel = this.store.dateRange.comparisonMode === 'lastYear' ? 'Last Year' : 'Previous';
+      const hasComparison = !!comparisonData;
+
+      const datasets = [
+        {
+          label: hasComparison ? 'Cost (Current)' : 'Cost',
+          data: currentData.cost,
+          borderColor: '#2563EB',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          borderWidth: 2,
+          tension: 0.3,
+          yAxisID: 'y',
+          pointRadius: 3,
+          pointHoverRadius: 5
+        },
+        {
+          label: hasComparison ? 'Clicks (Current)' : 'Clicks',
+          data: currentData.clicks,
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderWidth: 2,
+          tension: 0.3,
+          yAxisID: 'y1',
+          pointRadius: 3,
+          pointHoverRadius: 5
+        }
+      ];
+
+      // Add comparison datasets if comparison mode is enabled
+      if (comparisonData) {
+        datasets.push({
+          label: `Cost (${comparisonLabel})`,
+          data: comparisonData.cost,
+          borderColor: '#2563EB',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          tension: 0.3,
+          yAxisID: 'y',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointStyle: 'rectRot',
+          pointBorderColor: '#2563EB',
+          pointBackgroundColor: 'transparent'
+        });
+        datasets.push({
+          label: `Clicks (${comparisonLabel})`,
+          data: comparisonData.clicks,
+          borderColor: '#10B981',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          tension: 0.3,
+          yAxisID: 'y1',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointStyle: 'rectRot',
+          pointBorderColor: '#10B981',
+          pointBackgroundColor: 'transparent'
+        });
+      }
+
+      try {
+        this.trendChartInstance = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: currentData.labels,
+            datasets: datasets
+          },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                usePointStyle: true,
+                padding: 20
+              }
+            },
+            tooltip: {
+              usePointStyle: true,
+              callbacks: {
+                title: (items) => {
+                  const idx = items[0].dataIndex;
+                  // Format as YYYY-MM using UTC to avoid timezone issues
+                  const formatYM = (d) => {
+                    if (!d) return '';
+                    if (/^\d{4}-\d{2}$/.test(d)) return d;
+                    const date = new Date(d);
+                    if (isNaN(date.getTime())) return d;
+                    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+                  };
+                  const currentDate = formatYM(currentData.actualLabels[idx]);
+                  if (comparisonData && comparisonData.labels[idx]) {
+                    const compDate = formatYM(comparisonData.labels[idx]);
+                    return `${currentDate} vs ${compDate}`;
+                  }
+                  return currentDate;
+                },
+                label: (context) => {
+                  const label = context.dataset.label;
+                  const value = context.parsed.y;
+                  if (label.includes('Cost')) {
+                    return `${label}: $${value.toLocaleString()}`;
+                  }
+                  return `${label}: ${value.toLocaleString()}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Cost ($)'
+              },
+              ticks: {
+                callback: (value) => '$' + value.toLocaleString()
+              }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: {
+                display: true,
+                text: 'Clicks'
+              },
+              grid: {
+                drawOnChartArea: false
+              }
+            }
+          }
+        }
+        });
+      } catch (err) {
+        console.error('createTrendChart error:', err);
+      }
     }
   }
 };
 </script>
 
 <style>
-.metrics-grid {
+/* Overview Sections */
+.overview-section {
+  margin-bottom: var(--space-xl);
+}
+
+.section-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--space-md) 0;
+}
+
+/* Primary KPIs Grid - 4 large cards */
+.primary-kpis-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+}
+
+.primary-kpi-card {
+  min-height: 120px;
+}
+
+.primary-kpi-card .metric-value {
+  font-size: var(--font-size-2xl);
+}
+
+/* Supporting Metrics Grid - 6 smaller cards */
+.supporting-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
   gap: var(--space-md);
+}
+
+.supporting-metric-card {
+  min-height: 90px;
+}
+
+.supporting-metric-card .metric-value {
+  font-size: var(--font-size-xl);
+}
+
+.supporting-metric-card .metric-label {
+  font-size: 11px;
+}
+
+/* Responsive: Primary KPIs */
+@media (max-width: 1024px) {
+  .primary-kpis-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .supporting-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .primary-kpis-grid {
+    grid-template-columns: 1fr;
+  }
+  .supporting-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Funnel Visualization - Chevron Style */
+.funnel-container {
+  display: flex;
+  align-items: center;
+  padding: var(--space-md);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  gap: 0;
+  width: 100%;
+}
+
+.funnel-chevron {
+  position: relative;
+  height: 70px;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%);
+  margin-left: -15px;
+}
+
+.funnel-chevron:first-child {
+  margin-left: 0;
+  clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%);
+}
+
+.chevron-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.chevron-label {
+  font-size: 10px;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chevron-value {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.chevron-change {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* Chevron colors */
+.impressions-chevron { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+.clicks-chevron { background: linear-gradient(135deg, #6366F1, #4F46E5); }
+.sessions-chevron { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+.engaged-chevron { background: linear-gradient(135deg, #14B8A6, #0D9488); }
+.conversions-chevron { background: linear-gradient(135deg, #10B981, #059669); }
+
+/* Rate display between chevrons */
+.funnel-rate-between {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 var(--space-sm);
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.rate-value {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.rate-label {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rate-change {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* Change indicator colors */
+.change-up {
+  color: var(--color-success);
+}
+
+.change-down {
+  color: var(--color-error);
+}
+
+.change-neutral {
+  color: var(--color-text-muted);
+}
+
+/* Trend Chart */
+.trend-chart-container {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  height: 300px;
+}
+
+/* Responsive funnel */
+@media (max-width: 1200px) {
+  .funnel-chevron {
+    min-width: 100px;
+    height: 60px;
+  }
+  .chevron-value {
+    font-size: var(--font-size-md);
+  }
+  .funnel-rate-between {
+    min-width: 50px;
+    padding: 0 4px;
+  }
+}
+
+@media (max-width: 768px) {
+  .funnel-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-xs);
+  }
+
+  .funnel-chevron {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), 50% 100%, 0 calc(100% - 10px));
+    margin-left: 0;
+    margin-top: -10px;
+    min-width: auto;
+    width: 100%;
+    height: 60px;
+  }
+
+  .funnel-chevron:first-child {
+    margin-top: 0;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), 50% 100%, 0 calc(100% - 10px));
+  }
+
+  .funnel-rate-between {
+    flex-direction: row;
+    gap: var(--space-sm);
+    padding: var(--space-xs) 0;
+    justify-content: center;
+  }
+}
+
+/* Debug card styling */
+.debug-card {
+  background: #FEF3C7;
+  border-color: #F59E0B;
+  font-size: var(--font-size-sm);
+}
+
+.debug-card h3 {
+  margin: 0 0 var(--space-sm) 0;
+  color: #92400E;
+}
+
+.debug-card p {
+  margin: var(--space-xs) 0;
+  color: #78350F;
 }
 </style>

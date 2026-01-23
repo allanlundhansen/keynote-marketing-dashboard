@@ -783,3 +783,67 @@ Campaign List (#/campaigns)
 **Negative:**
 - Can't deep-link directly to Keywords for a campaign (must go through Campaign Detail)
 - Tab state not preserved in URL (could add `?tab=keywords` if needed later)
+
+---
+
+## ADR-029: Defer Analysis Views to Phase 3 (Compare Workspace)
+
+- **Status**: Accepted
+
+### Context
+
+Phase 2 originally planned 6 separate views:
+1. Overview (done)
+2. Campaigns (with drill-down tabs)
+3. Devices
+4. Campaign Types
+5. Countries
+6. Conversions
+
+During implementation review, we identified that this structure:
+1. **Fragments the analysis experience** - Users must navigate between 5 different views to analyze their data
+2. **Doesn't match real workflow** - Optimization work requires comparing campaigns side-by-side, not viewing them in isolation
+3. **Limits comparison flexibility** - Can't easily compare "Campaign A (2024) vs Campaign A (2025)" or "Campaign A vs Campaign B vs Campaign C"
+
+### Decision
+
+**Defer Sections 7-11 (all analysis views) to Phase 3: Compare Workspace.**
+
+Phase 2 scope becomes:
+- Overview Dashboard (done) - "Is my marketing working?"
+
+Phase 3 will deliver:
+- Compare Workspace - "How do I optimize?"
+
+### The Phase 3 Vision
+
+A flexible comparison workspace where:
+- **Columns** = Campaign + Time Period combinations (e.g., "Campaign A, Jan-Mar 2024" vs "Campaign A, Jan-Mar 2025")
+- **Components** = Addable/removable metric blocks (KPIs, Keywords, Search Terms, Landing Pages, Device breakdown, etc.)
+- **Duration lock** = All columns must have same duration for fair comparison
+- **Persistence** = Component configuration saved to localStorage
+
+This replaces 5 fragmented views with 1 powerful, flexible workspace.
+
+### Rationale
+
+1. **Campaign-centric mental model**: Users think "How is Campaign X doing?" not "How are my devices doing?"
+
+2. **Real optimization workflow**: Comparing what worked last year vs this year, seeing all metrics side-by-side
+
+3. **Devices/Types/Countries as dimensions**: These aren't separate views - they're lenses on campaign data. They become addable components.
+
+4. **Simpler navigation**: Overview + Compare (2 views) instead of 6 views
+
+### Consequences
+
+**Positive:**
+- More powerful analysis capability
+- Simpler navigation structure
+- Matches actual optimization workflow
+- Phase 2 delivers complete, usable product (Overview)
+
+**Negative:**
+- Phase 2 has no drill-down capability (only Overview)
+- Phase 3 is more complex to implement
+- More state management required (column config, component selection)

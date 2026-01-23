@@ -161,106 +161,17 @@
 - [x] Responsive chart sizing
 - [x] Legend showing current + comparison series
 
-## 7. Campaign Analysis View
+## ~~7-11. Analysis Views~~ (Deferred to Phase 3)
 
-> **Reorganized:** Sections 7 and 12 have been consolidated. Campaign drill-down views (Keywords, Search Terms, Landing Pages) are now part of the Campaign Detail View, not a separate section.
+> **Decision:** Sections 7-11 (Campaign Analysis, Device Analysis, Campaign Type Analysis, Geographic Analysis, and Conversion Configuration) have been superseded by Phase 3: Compare Workspace.
+>
+> **Rationale:** The original design fragmented analysis across 5 separate views. Phase 3 introduces a flexible comparison workspace where users can compare any combination of Campaign + Time Period side-by-side, with addable/removable metric components. This provides a more powerful and unified analysis experience.
+>
+> See ADR-029 for details.
 
-### 7.1 Campaign List View
-- [ ] Create sortable DataTable with PrimeVue
-- [ ] Columns: Campaign Name, Type, Cost, Clicks, Impressions, CTR, Sessions, Engaged Sessions, Conversions
-- [ ] Enable sorting by any column
-- [ ] Add pagination (20 rows per page)
-- [ ] Click row to navigate to Campaign Detail View
+## ~~12. Drill-Down Views~~ (Deferred to Phase 3)
 
-### 7.2 Campaign Detail View
-- [ ] Route: `#/campaigns/:id`
-- [ ] Display campaign summary metrics at top
-- [ ] Tab navigation: Keywords | Search Terms | Landing Pages
-- [ ] Back button to return to campaign list
-
-### 7.3 Keywords Tab (within Campaign Detail)
-- [ ] Call `getKeywordDetail(campaignId, dateFrom, dateTo)` backend function
-- [ ] Display sortable table with keyword data
-- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC
-- [ ] Show loading state during fetch
-- [ ] Expandable rows showing search terms (from Summary_Keywords)
-
-### 7.4 Search Terms Tab (within Campaign Detail)
-- [ ] Call `getSearchTermDetail(campaignId, dateFrom, dateTo)` backend function
-- [ ] Display sortable table with search term data
-- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
-- [ ] Useful for negative keyword identification
-
-### 7.5 Landing Pages Tab (within Campaign Detail)
-- [ ] Call `getLandingPageDetail(campaign, dateFrom, dateTo)` backend function
-- [ ] Display sortable table with landing page data
-- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Engagement Rate
-- [ ] Helps diagnose page vs targeting issues
-
-### 7.6 Campaign Comparison (Deferred)
-- [ ] Allow selecting 2-3 campaigns for side-by-side comparison
-- [ ] Show percentage of total for each metric
-- [ ] Visual bar comparison
-
-> **Note:** Campaign Comparison (7.6) is lower priority. Implement list + detail views first.
-
-## 8. Device Analysis View
-
-### 8.1 Device Breakdown
-- [ ] Create pie/donut chart showing distribution by device
-- [ ] Create bar chart comparing metrics across devices
-- [ ] Create table with device-level metrics
-
-### 8.2 Device Insights
-- [ ] Highlight device with best conversion rate
-- [ ] Highlight device with worst cost efficiency
-- [ ] Show % of spend vs % of conversions per device
-
-## 9. Campaign Type Analysis View
-
-### 9.1 Campaign Type Breakdown
-- [ ] Create pie/donut chart showing distribution by campaign type
-- [ ] Create bar chart comparing metrics across types (SEARCH, DISPLAY, etc.)
-- [ ] Create table with campaign-type-level metrics
-
-### 9.2 Type Comparison
-- [ ] Compare cost efficiency (Cost per Conversion) across types
-- [ ] Show volume vs efficiency trade-off
-
-## 10. Geographic Analysis View
-
-### 10.1 Country Table
-- [ ] Create sortable table with country data
-- [ ] Columns: Country, Cost, Clicks, Impressions, CTR, Conversions
-- [ ] Map criterion IDs to country names via lookup table
-- [ ] Handle unknown criterion IDs gracefully
-
-### 10.2 Geographic Insights
-- [ ] Sort by cost to show top spending countries
-- [ ] Calculate cost efficiency per country
-- [ ] Highlight top performers
-
-## 11. Conversion Configuration
-
-### 11.1 Event Selection UI
-- [ ] Display list of available events from Summary_Events
-- [ ] Checkbox/toggle for each event
-- [ ] Show event count next to each event name
-- [ ] "Select All" / "Clear All" buttons
-
-### 11.2 Persistence
-- [ ] Save selection to localStorage on change
-- [ ] Load selection from localStorage on app init
-- [ ] Apply selection to all conversion calculations
-
-### 11.3 Metric Recalculation
-- [ ] Recalculate "Conversion Count" when selection changes
-- [ ] Recalculate "Cost per Conversion" when selection changes
-- [ ] Update all views that display conversion metrics
-
-## ~~12. Drill-Down Views~~ (Consolidated into Section 7)
-
-> **Moved:** Keyword, Search Term, and Landing Page drill-down views have been consolidated into Section 7 (Campaign Analysis) as tabs within the Campaign Detail View. This reflects the actual user flow: Campaigns → Campaign Detail → Keywords/Search Terms/Landing Pages.
+> **Moved:** Drill-down views (Keywords, Search Terms, Landing Pages) are now components in the Phase 3 Compare Workspace.
 
 ## 13. UI States
 

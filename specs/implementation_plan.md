@@ -150,7 +150,12 @@ This is why GA4 data is split into three tables (Sessions, Pages, Events) - each
 │   │   ├── design.md
 │   │   ├── tasks.md
 │   │   └── ADR.md
-│   └── phase_2_dashboard/        # Phase 2 detailed specs
+│   ├── phase_2_dashboard/        # Phase 2 detailed specs
+│   │   ├── requirements.md
+│   │   ├── design.md
+│   │   ├── tasks.md
+│   │   └── ADR.md
+│   └── phase_3_compare/          # Phase 3 detailed specs
 │       ├── requirements.md
 │       ├── design.md
 │       ├── tasks.md
@@ -232,58 +237,76 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 
 ---
 
-### Phase 2: Dashboard Frontend — `specs/phase_2_dashboard/`
+### Phase 2: Overview Dashboard — `specs/phase_2_dashboard/`
 
-**Status**: ⏳ Not Started
+**Status**: ✅ Complete
 
-**Goal**: Build a web-based dashboard UI that visualizes marketing performance data from the summary sheets created in Phase 1.
+**Goal**: Build the Overview dashboard that answers "Is my marketing working?" at a glance.
 
 | Component | Status |
 |-----------|--------|
-| Vue 3 + Vue Router setup | ⏳ Pending |
-| Backend API functions | ⏳ Pending |
-| Dashboard Home (summary cards) | ⏳ Pending |
-| Trend Analysis view | ⏳ Pending |
-| Campaign Analysis view | ⏳ Pending |
-| Device/Campaign Type views | ⏳ Pending |
-| Geographic Analysis view | ⏳ Pending |
-| Conversion configuration | ⏳ Pending |
-| Drill-down views (Keywords, Search Terms, Landing Pages) | ⏳ Pending |
-| Web App deployment | ⏳ Pending |
+| Vue 3 + Vue Router setup | ✅ Complete |
+| PrimeVue 4 with Aura theme | ✅ Complete |
+| Backend API functions | ✅ Complete |
+| Overview: Primary KPIs (4 cards) | ✅ Complete |
+| Overview: Funnel Visualization | ✅ Complete |
+| Overview: Supporting Metrics (6 cards) | ✅ Complete |
+| Overview: Trend Sparkline with Metric Presets | ✅ Complete |
+| Overview: Quick Insights (Keywords) | ✅ Complete |
+| Filter controls (Campaign, Device, Type) | ✅ Complete |
+| Date range & comparison mode | ✅ Complete |
+| Analysis views (Campaigns, Devices, etc.) | ➡️ Deferred to Phase 3 |
 
 **Tech Stack**:
 - Vue 3 via CDN (no build tooling)
 - Vue Router with hash mode for browser history/deep linking
-- PrimeVue components (DataTable, Dropdown, etc.)
+- PrimeVue 4 components (DataTable, Select, DatePicker, etc.)
 - Chart.js for visualizations
 
-**Key Features**:
-- Performance summary cards with YoY comparison
-- Trend charts for time-series analysis
-- Filterable views by Campaign, Device, Campaign Type
-- Configurable conversion event selection
-- Drill-down to keyword, search term, and landing page detail
-- Simplified mobile view (summary cards only)
+**Key Features Delivered**:
+- Overview dashboard with KPIs, funnel, trends, quick insights
+- Flexible date range with comparison modes (Previous Period, YoY, Custom)
+- Metric presets for trend analysis (Cost & Clicks, Sessions & Engaged, etc.)
+- Quick Insights showing top keywords with expandable search terms
+- Responsive layout
+
+**Deferred to Phase 3**: Campaign Analysis, Device Analysis, Campaign Type Analysis, Geographic Analysis, Conversion Configuration. These were replaced by a more powerful Compare Workspace design.
 
 **Detailed specs**: See `specs/phase_2_dashboard/`
 
 ---
 
-### Phase 3: Advanced Funnel Visualization & Diagnostics
+### Phase 3: Compare Workspace — `specs/phase_3_compare/`
 
 **Status**: ⏳ Not Started
 
-**Goal**: Build on the Phase 2 dashboard to provide deeper funnel insights and diagnostic tools.
+**Goal**: Build a flexible comparison workspace that answers "How do I optimize?" by enabling deep side-by-side analysis of campaigns and time periods.
 
-**Planned Features**:
-- Visual funnel diagram: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
-- Drop-off rate calculations at each funnel stage
-- Landing page comparison view (side-by-side performance)
-- Event sequence analysis (what actions precede conversions?)
-- Diagnostic alerts: "Campaign X has high clicks but low engagement - check landing page"
-- A/B landing page insights (if multiple pages receive traffic from same campaign)
+| Component | Status |
+|-----------|--------|
+| Navigation update (Overview + Compare) | ⏳ Pending |
+| Workspace state management | ⏳ Pending |
+| Column system (Campaign + Time Period) | ⏳ Pending |
+| Duration lock mechanism | ⏳ Pending |
+| Component system (add/remove metrics) | ⏳ Pending |
+| KPIs component | ⏳ Pending |
+| Keywords component | ⏳ Pending |
+| Search Terms component | ⏳ Pending |
+| Landing Pages component | ⏳ Pending |
+| Device/Type/Geographic breakdown components | ⏳ Pending |
+| Funnel & Sparkline components | ⏳ Pending |
+| Conversion configuration | ⏳ Pending |
+| localStorage persistence | ⏳ Pending |
 
-**Specs**: `specs/phase_3_funnel/` (to be created)
+**Key Concept**: Column-based comparison workspace where:
+- **Columns** = Campaign + Time Period combinations (e.g., "Campaign A, Q1 2024" vs "Campaign A, Q1 2025")
+- **Components** = Addable/removable metric blocks (KPIs, Keywords, Search Terms, etc.)
+- **Duration Lock** = All columns must have same duration for fair comparison
+- **Persistence** = Component configuration saved to localStorage
+
+**Why This Approach**: The original Phase 2 design had 5 separate analysis views (Campaigns, Devices, Types, Countries, Conversions). This fragmented the analysis experience. Real optimization work requires comparing data side-by-side, not navigating between isolated views. The Compare Workspace consolidates all analysis into one flexible tool.
+
+**Detailed specs**: See `specs/phase_3_compare/`
 
 ---
 
@@ -291,13 +314,15 @@ Due to Google Sheets' 10M cell limit, each raw data type is stored in its own sp
 
 **Status**: ⏳ Not Started
 
-**Goal**: Production-ready system with automated alerts and refinements.
+**Goal**: Production-ready system with automated alerts, refinements, and advanced diagnostics.
 
 **Planned Features**:
 - Email alerts for significant changes (anomaly detection)
+- Diagnostic insights: "Campaign X has high clicks but low engagement - check landing page"
 - Dashboard UI refinements based on usage feedback
 - Error recovery and retry logic improvements
 - Export functionality (if needed)
+- Event sequence analysis (what actions precede conversions?)
 
 **Specs**: `specs/phase_4_automation/` (to be created)
 

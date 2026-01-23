@@ -128,88 +128,23 @@ Available through preset selector:
 - [x] Sessions & Engaged Sessions
 - [x] Clicks & Impressions
 
-### 3. Campaign Analysis View
+### ~~3-7. Analysis Views~~ (Deferred to Phase 3)
 
-> **Reorganized:** Drill-down views (Keywords, Search Terms, Landing Pages) are now part of Campaign Analysis as tabs within Campaign Detail View.
+> **Decision:** Sections 3-7 (Campaign Analysis, Device Analysis, Campaign Type Analysis, Geographic Analysis, and Conversion Configuration) have been superseded by Phase 3: Compare Workspace.
+>
+> **Rationale:** The original design fragmented analysis across multiple separate views. Phase 3 introduces a flexible comparison workspace where:
+> - Users compare any combination of Campaign + Time Period side-by-side
+> - Metric components (KPIs, Keywords, Search Terms, Landing Pages, Device breakdown, etc.) can be added/removed dynamically
+> - Duration is locked across columns for fair comparison
+> - Component configuration persists via localStorage
+>
+> This provides a more powerful, unified analysis experience aligned with actual optimization workflows.
+>
+> See ADR-029 for details.
 
-#### 3.1 Campaign List
+### ~~8. Drill-Down Views~~ (Deferred to Phase 3)
 
-- [ ] Sortable table with all campaigns
-- [ ] Columns: Campaign Name, Type, Cost, Clicks, Impressions, CTR, Sessions, Engaged Sessions, Conversions
-- [ ] Click row to navigate to Campaign Detail View
-
-#### 3.2 Campaign Detail View
-
-- [ ] Route: `#/campaigns/:id`
-- [ ] Campaign summary metrics at top
-- [ ] Tab navigation: Keywords | Search Terms | Landing Pages
-- [ ] Back button to return to campaign list
-
-#### 3.3 Keywords Tab (within Campaign Detail)
-
-- [ ] Shows keyword-level performance for selected campaign/date range
-- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC
-- [ ] Sortable by any column
-- [ ] Expandable rows showing search terms per keyword
-- [ ] Acceptable load time: 2-3 seconds
-
-#### 3.4 Search Terms Tab (within Campaign Detail)
-
-- [ ] Shows actual user queries for selected campaign/date range
-- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
-- [ ] Useful for negative keyword identification
-- [ ] Acceptable load time: 2-3 seconds
-
-#### 3.5 Landing Pages Tab (within Campaign Detail)
-
-- [ ] Shows landing page performance for selected campaign/date range
-- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Engagement Rate
-- [ ] Helps diagnose page vs targeting issues
-- [ ] Acceptable load time: 2-3 seconds
-
-#### 3.6 Campaign Comparison (Deferred)
-
-- [ ] Side-by-side comparison of selected campaigns
-- [ ] Percentage of total spend/clicks/conversions for each campaign
-
-### 4. Device Analysis View
-
-- [ ] Breakdown of metrics by device (DESKTOP, MOBILE, TABLET)
-- [ ] Pie/bar chart showing distribution
-- [ ] Table with device-level metrics
-- [ ] Identify device with best/worst conversion rate
-
-### 5. Campaign Type Analysis View
-
-- [ ] Breakdown of metrics by campaign type (SEARCH, DISPLAY, etc.)
-- [ ] Compare cost efficiency across campaign types
-- [ ] Table with campaign-type-level metrics
-
-### 6. Geographic Analysis View
-
-- [ ] Breakdown of metrics by country (from Raw_Ads_Geographic)
-- [ ] Map country criterion IDs to country names via lookup table
-- [ ] Table showing: Country, Cost, Clicks, Impressions, CTR, Conversions
-- [ ] Sortable by any metric
-- [ ] Identify top-performing countries by cost efficiency
-
-### 7. Conversion Configuration
-
-#### 7.1 Event Selection
-
-- [ ] Display list of all available events from Summary_Events
-- [ ] User can select which events count as "conversions"
-- [ ] Multiple events can be selected (e.g., form_submit + phone_click)
-- [ ] Selection persists across sessions (localStorage or config sheet)
-
-#### 7.2 Conversion Metrics Update
-
-- [ ] All conversion-related metrics recalculate when selection changes
-- [ ] Affected metrics: Conversion Count, Cost per Conversion, Conversion Rate
-
-### ~~8. Drill-Down Views~~ (Consolidated into Section 3)
-
-> **Moved:** Keyword, Search Term, and Landing Page drill-down views have been consolidated into Section 3 (Campaign Analysis) as tabs within the Campaign Detail View. This reflects the actual user flow: Campaign List → Campaign Detail → Keywords/Search Terms/Landing Pages tabs.
+> **Moved:** Drill-down views are now addable components in the Phase 3 Compare Workspace.
 
 ### 9. UI States
 

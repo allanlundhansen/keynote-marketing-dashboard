@@ -77,68 +77,65 @@
 ## 5. Dashboard Home View (Overview)
 
 ### 5.1 Primary KPIs (4 Large Cards)
-- [ ] Display Total Cost card (with comparison %)
-- [ ] Display Conversions card (with comparison %)
-- [ ] Display Cost per Conversion card (with comparison %)
-- [ ] Display Engagement Rate card (EngagedSessions / Sessions, with comparison %)
-- [ ] Style these 4 cards prominently as the primary metrics
+- [x] Display Total Cost card (with comparison %)
+- [x] Display Clicks card (with comparison %) - replaced Conversions as primary KPI
+- [x] Display Avg CPC card (with comparison %) - replaced Cost per Conversion
+- [x] Display Engagement Rate card (EngagedSessions / Sessions, with comparison %)
+- [x] Style these 4 cards prominently as the primary metrics
 
-> **Rationale:** These 4 metrics answer "Is my marketing working?" — Cost + Conversions = effort vs outcome, Cost/Conversion = efficiency, Engagement Rate = funnel health.
+> **Rationale:** These 4 metrics answer "Is my marketing working?" — Cost + Clicks = effort vs reach, Avg CPC = efficiency, Engagement Rate = funnel health. Conversions remain in the funnel but not as primary KPI per user preference.
 
 ### 5.2 Funnel Visualization
-- [ ] Create horizontal funnel component showing: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
-- [ ] Display absolute number at each stage
-- [ ] Display conversion rate between each stage (CTR, Click→Session rate, Session→Engaged rate, Engaged→Conversion rate)
-- [ ] Visual width proportional to volume (funnel narrows left to right)
-- [ ] Color indicators vs comparison period (green arrow if improved, red if declined)
-- [ ] Responsive design (stacks vertically on mobile)
+- [x] Create horizontal funnel component showing: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
+- [x] Display absolute number at each stage
+- [x] Display conversion rate between each stage (CTR, Click→Session rate, Session→Engaged rate, Engaged→Conversion rate)
+- [x] Visual width proportional to volume (funnel narrows left to right)
+- [x] Color indicators vs comparison period (green arrow if improved, red if declined)
+- [x] Responsive design (stacks vertically on mobile)
 
 > **Rationale:** The funnel visualization is the core value proposition of this dashboard. It answers "WHERE in my funnel am I losing people?" — the diagnostic tool the project exists to provide.
 
 ### 5.3 Supporting Metrics (6 Smaller Cards)
-- [ ] Display Impressions card
-- [ ] Display Clicks card
-- [ ] Display CTR card (Clicks / Impressions)
-- [ ] Display Sessions card
-- [ ] Display Avg CPC card (Cost / Clicks)
-- [ ] Display Cost per Session card
-- [ ] Style these 6 cards smaller/secondary to primary KPIs
+- [x] Display Impressions card
+- [x] Display CTR card (Clicks / Impressions)
+- [x] Display Sessions card
+- [x] Display Engaged Sessions card
+- [x] Display Cost per Session card
+- [x] Display Cost per Engaged Session card
+- [x] Style these 6 cards smaller/secondary to primary KPIs
 
 ### 5.4 Trend Sparkline
-- [ ] Create line chart showing Cost and Conversions over selected date range
-- [ ] Use Chart.js for rendering
-- [ ] Solid lines for current period (blue = Cost, green = Conversions)
-- [ ] When comparison mode enabled, overlay comparison period as dashed lines (same colors)
-- [ ] X-axis aligned by relative position (month 1, 2, 3... so periods overlay correctly)
-- [ ] Tooltip on hover shows all values (current + comparison if enabled)
-- [ ] Legend showing: Cost (Current), Cost (Comparison), Conversions (Current), Conversions (Comparison)
-- [ ] Responsive sizing
-- [ ] When comparison mode is "none", only show solid lines (2 lines total)
+- [x] Create line chart showing Cost and Clicks over selected date range
+- [x] Use Chart.js for rendering
+- [x] Solid lines for current period (blue = Cost, green = Clicks)
+- [x] When comparison mode enabled, overlay comparison period as dashed lines (same colors)
+- [x] X-axis aligned by relative position (month 1, 2, 3... so periods overlay correctly)
+- [x] Tooltip on hover shows all values (current + comparison if enabled)
+- [x] Legend showing: Cost (Current), Cost (Comparison), Clicks (Current), Clicks (Comparison)
+- [x] Responsive sizing
+- [x] When comparison mode is "none", only show solid lines (2 lines total)
 
 > **Rationale:** Addresses the goal "Understand if campaigns are underperforming vs. external factors (seasonality, economy)". Overlaying comparison period reveals trend pattern differences - not just point-in-time comparison but whether current period follows same seasonal curve as comparison period.
 
 ### 5.5 Quick Insights (Lazy-Loaded Keywords)
-- [ ] Create backend function `getTopKeywords(dateFrom, dateTo, compareDateFrom, compareDateTo, limit)` that returns top keywords with both current and comparison period data
-- [ ] Lazy-load this section AFTER main Overview renders (async, non-blocking)
-- [ ] Display "Top 5 Keywords by Cost" mini-table:
-  - Columns: Keyword, Cost, vs Prev (% change), Clicks, Conversions
-  - "vs Prev" shows ▲ green for increase, ▼ red for decrease (note: cost increase is typically bad)
-- [ ] Display "Top 5 Keywords by Conversions" mini-table:
-  - Columns: Keyword, Conversions, vs Prev (% change), Cost, CTR
-  - "vs Prev" shows ▲ green for increase, ▼ red for decrease
-- [ ] Sort tables by current period value (not comparison)
-- [ ] Show loading spinner while keywords load
-- [ ] Handle empty state if no keyword data available
-- [ ] Handle case when comparison mode is "none" (hide "vs Prev" column or show "—")
+- [x] Create backend function `getKeywordsSummary(dateFrom, dateTo, compareDateFrom, compareDateTo, campaignIds, limit)` that returns top keywords with current and comparison period data (independently ranked)
+- [x] Pre-aggregate keywords in Summary_Keywords sheet with embedded search terms (top 15 per keyword)
+- [x] Lazy-load this section AFTER main Overview renders (async, non-blocking)
+- [x] Display "Top 5 Keywords by Cost" mini-table using PrimeVue DataTable with expandable rows for search terms
+- [x] Display "Top 5 Keywords by Clicks" mini-table using PrimeVue DataTable with expandable rows for search terms
+- [x] When comparison enabled: show 4 tables (Current Cost vs Comparison Cost, Current Clicks vs Comparison Clicks) - each period has its own independently ranked top 5
+- [x] Sort tables by current period value (not comparison)
+- [x] Show loading spinner while keywords load
+- [x] Handle empty state if no keyword data available
 
-> **Rationale:** Keywords are the actionable lever for Google Ads optimization. Comparison data makes insights actionable: "Keyword X cost up 24% - investigate" or "Keyword Y conversions up 40% - allocate more budget". Without comparison, you're just looking at numbers with no context.
+> **Rationale:** Keywords are the actionable lever for Google Ads optimization. Showing independent top 5 for each period allows comparison of strategy shifts over time (different keywords may be top performers in different periods).
 
 ### 5.6 Data Loading
-- [ ] Call `getDashboardData()` on mount (Summary sheets - fast)
-- [ ] Show loading skeleton while fetching
-- [ ] Handle errors gracefully
-- [ ] Apply filters to loaded data client-side
-- [ ] After main data loads, trigger lazy-load of Quick Insights (Keywords)
+- [x] Call `getDashboardData()` on mount (Summary sheets - fast)
+- [x] Show loading skeleton while fetching
+- [x] Handle errors gracefully
+- [x] Apply filters to loaded data client-side
+- [x] After main data loads, trigger lazy-load of Quick Insights (Keywords)
 
 ## 6. Trend Analysis View
 

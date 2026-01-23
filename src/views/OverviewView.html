@@ -4,7 +4,15 @@ const OverviewView = {
 
   data() {
     return {
-      trendChartInstance: null
+      trendChartInstance: null,
+      // Quick Insights state
+      keywordsLoading: false,
+      keywordsError: null,
+      keywordsData: null,
+      expandedCostRows: [],
+      expandedClicksRows: [],
+      expandedCompCostRows: [],
+      expandedCompClicksRows: []
     };
   },
 
@@ -208,7 +216,310 @@ const OverviewView = {
           </div>
         </section>
 
-        <!-- Placeholder for Section 5: Quick Insights (coming next) -->
+        <!-- Section 5: Quick Insights (Keywords) -->
+        <section class="overview-section">
+          <h2 class="section-title">Quick Insights</h2>
+
+          <div v-if="keywordsLoading" class="quick-insights-loading">
+            <LoadingSpinner message="Loading keyword insights..." />
+          </div>
+
+          <div v-else-if="keywordsError" class="quick-insights-error">
+            <p>{{ keywordsError }}</p>
+            <Button label="Retry" @click="loadKeywords" size="small" />
+          </div>
+
+          <div v-else-if="keywordsData && keywordsData.current" class="quick-insights-container">
+            <!-- Without comparison: Cost and Clicks side by side -->
+            <div v-if="!hasComparison" class="quick-insights-grid">
+              <!-- Top 5 Keywords by Cost (Current) -->
+              <div class="insights-table-container">
+                <h3 class="insights-table-title">Top 5 Keywords by Cost</h3>
+                <DataTable
+                  :value="keywordsData.current.byCost"
+                  v-model:expandedRows="expandedCostRows"
+                  dataKey="keyword"
+                  size="small"
+                  class="insights-datatable"
+                >
+                  <Column expander style="width: 3rem" />
+                  <Column field="keyword" header="Keyword">
+                    <template #body="{ data }">
+                      <span class="keyword-text">{{ data.keyword }}</span>
+                      <span v-if="data.searchTerms && data.searchTerms.length" class="search-terms-count">({{ data.searchTerms.length }})</span>
+                    </template>
+                  </Column>
+                  <Column field="cost" header="Cost">
+                    <template #body="{ data }">
+                      <span class="metric-value">{{ formatCurrency(data.cost) }}</span>
+                    </template>
+                  </Column>
+                  <Column field="clicks" header="Clicks">
+                    <template #body="{ data }">
+                      <span class="secondary-value">{{ formatNumber(data.clicks) }}</span>
+                    </template>
+                  </Column>
+                  <template #expansion="{ data }">
+                    <div class="search-terms-list">
+                      <div v-for="(st, stIndex) in data.searchTerms" :key="stIndex" class="search-term-item">
+                        <span class="search-term-text">{{ st.term }}</span>
+                        <span class="search-term-cost">{{ formatCurrency(st.cost) }}</span>
+                        <span class="search-term-clicks">{{ st.clicks }} clicks</span>
+                      </div>
+                      <div v-if="!data.searchTerms || data.searchTerms.length === 0" class="no-search-terms">
+                        No search terms data
+                      </div>
+                    </div>
+                  </template>
+                </DataTable>
+              </div>
+
+              <!-- Top 5 Keywords by Clicks (Current) -->
+              <div class="insights-table-container">
+                <h3 class="insights-table-title">Top 5 Keywords by Clicks</h3>
+                <DataTable
+                  :value="keywordsData.current.byClicks"
+                  v-model:expandedRows="expandedClicksRows"
+                  dataKey="keyword"
+                  size="small"
+                  class="insights-datatable"
+                >
+                  <Column expander style="width: 3rem" />
+                  <Column field="keyword" header="Keyword">
+                    <template #body="{ data }">
+                      <span class="keyword-text">{{ data.keyword }}</span>
+                      <span v-if="data.searchTerms && data.searchTerms.length" class="search-terms-count">({{ data.searchTerms.length }})</span>
+                    </template>
+                  </Column>
+                  <Column field="clicks" header="Clicks">
+                    <template #body="{ data }">
+                      <span class="metric-value">{{ formatNumber(data.clicks) }}</span>
+                    </template>
+                  </Column>
+                  <Column field="cost" header="Cost">
+                    <template #body="{ data }">
+                      <span class="secondary-value">{{ formatCurrency(data.cost) }}</span>
+                    </template>
+                  </Column>
+                  <Column field="ctr" header="CTR">
+                    <template #body="{ data }">
+                      <span class="secondary-value">{{ formatPercent(data.ctr) }}</span>
+                    </template>
+                  </Column>
+                  <template #expansion="{ data }">
+                    <div class="search-terms-list">
+                      <div v-for="(st, stIndex) in data.searchTerms" :key="stIndex" class="search-term-item">
+                        <span class="search-term-text">{{ st.term }}</span>
+                        <span class="search-term-clicks">{{ st.clicks }} clicks</span>
+                        <span class="search-term-cost">{{ formatCurrency(st.cost) }}</span>
+                      </div>
+                      <div v-if="!data.searchTerms || data.searchTerms.length === 0" class="no-search-terms">
+                        No search terms data
+                      </div>
+                    </div>
+                  </template>
+                </DataTable>
+              </div>
+            </div>
+
+            <!-- With comparison: 2 rows - Cost row, then Clicks row -->
+            <div v-else class="quick-insights-comparison">
+              <!-- Row 1: Cost comparison -->
+              <div class="insights-comparison-row">
+                <h3 class="insights-row-title">Top Keywords by Cost</h3>
+                <div class="quick-insights-grid">
+                  <!-- Current Period - Cost -->
+                  <div class="insights-table-container">
+                    <h4 class="insights-table-title insights-table-title-current">Current Period</h4>
+                    <DataTable
+                      :value="keywordsData.current.byCost"
+                      v-model:expandedRows="expandedCostRows"
+                      dataKey="keyword"
+                      size="small"
+                      class="insights-datatable"
+                    >
+                      <Column expander style="width: 3rem" />
+                      <Column field="keyword" header="Keyword">
+                        <template #body="{ data }">
+                          <span class="keyword-text">{{ data.keyword }}</span>
+                          <span v-if="data.searchTerms && data.searchTerms.length" class="search-terms-count">({{ data.searchTerms.length }})</span>
+                        </template>
+                      </Column>
+                      <Column field="cost" header="Cost">
+                        <template #body="{ data }">
+                          <span class="metric-value">{{ formatCurrency(data.cost) }}</span>
+                        </template>
+                      </Column>
+                      <Column field="clicks" header="Clicks">
+                        <template #body="{ data }">
+                          <span class="secondary-value">{{ formatNumber(data.clicks) }}</span>
+                        </template>
+                      </Column>
+                      <template #expansion="{ data }">
+                        <div class="search-terms-list">
+                          <div v-for="(st, stIndex) in data.searchTerms" :key="stIndex" class="search-term-item">
+                            <span class="search-term-text">{{ st.term }}</span>
+                            <span class="search-term-cost">{{ formatCurrency(st.cost) }}</span>
+                            <span class="search-term-clicks">{{ st.clicks }} clicks</span>
+                          </div>
+                          <div v-if="!data.searchTerms || data.searchTerms.length === 0" class="no-search-terms">
+                            No search terms data
+                          </div>
+                        </div>
+                      </template>
+                    </DataTable>
+                  </div>
+
+                  <!-- Comparison Period - Cost -->
+                  <div class="insights-table-container">
+                    <h4 class="insights-table-title insights-table-title-comparison">{{ comparisonPeriodLabel }}</h4>
+                    <DataTable
+                      :value="keywordsData.comparison?.byCost || []"
+                      v-model:expandedRows="expandedCompCostRows"
+                      dataKey="keyword"
+                      size="small"
+                      class="insights-datatable"
+                    >
+                      <Column expander style="width: 3rem" />
+                      <Column field="keyword" header="Keyword">
+                        <template #body="{ data }">
+                          <span class="keyword-text">{{ data.keyword }}</span>
+                          <span v-if="data.searchTerms && data.searchTerms.length" class="search-terms-count">({{ data.searchTerms.length }})</span>
+                        </template>
+                      </Column>
+                      <Column field="cost" header="Cost">
+                        <template #body="{ data }">
+                          <span class="metric-value">{{ formatCurrency(data.cost) }}</span>
+                        </template>
+                      </Column>
+                      <Column field="clicks" header="Clicks">
+                        <template #body="{ data }">
+                          <span class="secondary-value">{{ formatNumber(data.clicks) }}</span>
+                        </template>
+                      </Column>
+                      <template #expansion="{ data }">
+                        <div class="search-terms-list">
+                          <div v-for="(st, stIndex) in data.searchTerms" :key="stIndex" class="search-term-item">
+                            <span class="search-term-text">{{ st.term }}</span>
+                            <span class="search-term-cost">{{ formatCurrency(st.cost) }}</span>
+                            <span class="search-term-clicks">{{ st.clicks }} clicks</span>
+                          </div>
+                          <div v-if="!data.searchTerms || data.searchTerms.length === 0" class="no-search-terms">
+                            No search terms data
+                          </div>
+                        </div>
+                      </template>
+                    </DataTable>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Row 2: Clicks comparison -->
+              <div class="insights-comparison-row">
+                <h3 class="insights-row-title">Top Keywords by Clicks</h3>
+                <div class="quick-insights-grid">
+                  <!-- Current Period - Clicks -->
+                  <div class="insights-table-container">
+                    <h4 class="insights-table-title insights-table-title-current">Current Period</h4>
+                    <DataTable
+                      :value="keywordsData.current.byClicks"
+                      v-model:expandedRows="expandedClicksRows"
+                      dataKey="keyword"
+                      size="small"
+                      class="insights-datatable"
+                    >
+                      <Column expander style="width: 3rem" />
+                      <Column field="keyword" header="Keyword">
+                        <template #body="{ data }">
+                          <span class="keyword-text">{{ data.keyword }}</span>
+                          <span v-if="data.searchTerms && data.searchTerms.length" class="search-terms-count">({{ data.searchTerms.length }})</span>
+                        </template>
+                      </Column>
+                      <Column field="clicks" header="Clicks">
+                        <template #body="{ data }">
+                          <span class="metric-value">{{ formatNumber(data.clicks) }}</span>
+                        </template>
+                      </Column>
+                      <Column field="cost" header="Cost">
+                        <template #body="{ data }">
+                          <span class="secondary-value">{{ formatCurrency(data.cost) }}</span>
+                        </template>
+                      </Column>
+                      <Column field="ctr" header="CTR">
+                        <template #body="{ data }">
+                          <span class="secondary-value">{{ formatPercent(data.ctr) }}</span>
+                        </template>
+                      </Column>
+                      <template #expansion="{ data }">
+                        <div class="search-terms-list">
+                          <div v-for="(st, stIndex) in data.searchTerms" :key="stIndex" class="search-term-item">
+                            <span class="search-term-text">{{ st.term }}</span>
+                            <span class="search-term-clicks">{{ st.clicks }} clicks</span>
+                            <span class="search-term-cost">{{ formatCurrency(st.cost) }}</span>
+                          </div>
+                          <div v-if="!data.searchTerms || data.searchTerms.length === 0" class="no-search-terms">
+                            No search terms data
+                          </div>
+                        </div>
+                      </template>
+                    </DataTable>
+                  </div>
+
+                  <!-- Comparison Period - Clicks -->
+                  <div class="insights-table-container">
+                    <h4 class="insights-table-title insights-table-title-comparison">{{ comparisonPeriodLabel }}</h4>
+                    <DataTable
+                      :value="keywordsData.comparison?.byClicks || []"
+                      v-model:expandedRows="expandedCompClicksRows"
+                      dataKey="keyword"
+                      size="small"
+                      class="insights-datatable"
+                    >
+                      <Column expander style="width: 3rem" />
+                      <Column field="keyword" header="Keyword">
+                        <template #body="{ data }">
+                          <span class="keyword-text">{{ data.keyword }}</span>
+                          <span v-if="data.searchTerms && data.searchTerms.length" class="search-terms-count">({{ data.searchTerms.length }})</span>
+                        </template>
+                      </Column>
+                      <Column field="clicks" header="Clicks">
+                        <template #body="{ data }">
+                          <span class="metric-value">{{ formatNumber(data.clicks) }}</span>
+                        </template>
+                      </Column>
+                      <Column field="cost" header="Cost">
+                        <template #body="{ data }">
+                          <span class="secondary-value">{{ formatCurrency(data.cost) }}</span>
+                        </template>
+                      </Column>
+                      <Column field="ctr" header="CTR">
+                        <template #body="{ data }">
+                          <span class="secondary-value">{{ formatPercent(data.ctr) }}</span>
+                        </template>
+                      </Column>
+                      <template #expansion="{ data }">
+                        <div class="search-terms-list">
+                          <div v-for="(st, stIndex) in data.searchTerms" :key="stIndex" class="search-term-item">
+                            <span class="search-term-text">{{ st.term }}</span>
+                            <span class="search-term-clicks">{{ st.clicks }} clicks</span>
+                            <span class="search-term-cost">{{ formatCurrency(st.cost) }}</span>
+                          </div>
+                          <div v-if="!data.searchTerms || data.searchTerms.length === 0" class="no-search-terms">
+                            No search terms data
+                          </div>
+                        </div>
+                      </template>
+                    </DataTable>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="quick-insights-empty">
+            <p>Keyword insights will load after main dashboard data.</p>
+          </div>
+        </section>
 
         <!-- Debug Info (temporary) -->
         <div class="card debug-card" style="margin-top: var(--space-lg);">
@@ -421,6 +732,24 @@ const OverviewView = {
       return this.comparisonFunnelStages !== null;
     },
 
+    // Whether comparison mode is enabled (for Quick Insights)
+    hasComparison() {
+      return this.store.dateRange.comparisonMode !== 'none';
+    },
+
+    // Label for comparison period in Quick Insights
+    comparisonPeriodLabel() {
+      const mode = this.store.dateRange.comparisonMode;
+      if (mode === 'lastYear') return 'Last Year';
+      if (mode === 'previous') return 'Previous Period';
+      if (mode === 'custom') {
+        const range = this.storeComputed.comparisonDateRange();
+        if (range) return `${range.from} to ${range.to}`;
+        return 'Comparison Period';
+      }
+      return 'Comparison Period';
+    },
+
     // Trend chart data - monthly Cost and Clicks
     trendChartData() {
       const monthly = this.storeComputed.filteredMonthly();
@@ -525,6 +854,8 @@ const OverviewView = {
   mounted() {
     this.$nextTick(() => {
       this.createTrendChart();
+      // Lazy-load keywords after main render
+      this.loadKeywords();
     });
   },
 
@@ -544,6 +875,28 @@ const OverviewView = {
         });
       },
       deep: true
+    },
+    // Reload keywords when date range changes
+    'store.dateRange.from': function() {
+      this.loadKeywords();
+    },
+    'store.dateRange.to': function() {
+      this.loadKeywords();
+    },
+    'store.dateRange.comparisonMode': function() {
+      this.loadKeywords();
+    },
+    'store.filters.campaigns': {
+      handler() {
+        this.loadKeywords();
+      },
+      deep: true
+    },
+    // Load keywords when main data becomes available
+    'store.ui.initialized': function(newVal) {
+      if (newVal) {
+        this.loadKeywords();
+      }
     }
   },
 
@@ -779,6 +1132,79 @@ const OverviewView = {
       } catch (err) {
         console.error('createTrendChart error:', err);
       }
+    },
+
+    // Load keywords data (lazy-loaded)
+    loadKeywords() {
+      // Don't load if main data isn't ready yet
+      if (!this.store.ui.initialized) {
+        console.log('loadKeywords: waiting for main data');
+        return;
+      }
+
+      this.keywordsLoading = true;
+      this.keywordsError = null;
+
+      // Get date range
+      const dateFrom = this.store.dateRange.from;
+      const dateTo = this.store.dateRange.to;
+
+      // Get comparison date range if enabled
+      const compRange = this.storeComputed.comparisonDateRange();
+      const compareDateFrom = compRange?.from || null;
+      const compareDateTo = compRange?.to || null;
+
+      // Get campaign filter
+      const campaignIds = this.store.filters.campaigns.length > 0 ? this.store.filters.campaigns : null;
+
+      console.log('loadKeywords:', { dateFrom, dateTo, compareDateFrom, compareDateTo, campaignIds });
+
+      google.script.run
+        .withSuccessHandler((result) => {
+          console.log('getKeywordsSummary result:', result);
+          this.keywordsData = result;
+          this.keywordsLoading = false;
+          // Reset expanded state
+          this.expandedCostRows = [];
+          this.expandedClicksRows = [];
+          this.expandedCompCostRows = [];
+          this.expandedCompClicksRows = [];
+        })
+        .withFailureHandler((error) => {
+          console.error('getKeywordsSummary error:', error);
+          this.keywordsError = error.message || 'Failed to load keyword data';
+          this.keywordsLoading = false;
+        })
+        .getKeywordsSummary(dateFrom, dateTo, compareDateFrom, compareDateTo, campaignIds, 5);
+    },
+
+    // Format currency
+    formatCurrency(value) {
+      if (value === null || value === undefined) return '—';
+      return '$' + new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    },
+
+    // Format change percentage
+    formatChange(value) {
+      if (value === null || value === undefined) return '—';
+      const sign = value >= 0 ? '▲' : '▼';
+      return `${sign} ${Math.abs(value).toFixed(1)}%`;
+    },
+
+    // Get CSS class for cost change (cost increase is bad)
+    getCostChangeClass(value) {
+      if (value === null || value === undefined) return '';
+      if (value > 0) return 'change-down'; // Cost up = bad
+      if (value < 0) return 'change-up';   // Cost down = good
+      return 'change-neutral';
+    },
+
+    // Get CSS class for clicks change (clicks increase is good)
+    getClicksChangeClass(value) {
+      if (value === null || value === undefined) return '';
+      if (value > 0) return 'change-up';   // Clicks up = good
+      if (value < 0) return 'change-down'; // Clicks down = bad
+      return 'change-neutral';
     }
   }
 };
@@ -1021,5 +1447,146 @@ const OverviewView = {
 .debug-card p {
   margin: var(--space-xs) 0;
   color: #78350F;
+}
+
+/* Quick Insights Section */
+.quick-insights-container {
+  /* Container for both comparison and non-comparison views */
+}
+
+.quick-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+}
+
+/* Comparison layout - stacked rows */
+.quick-insights-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.insights-comparison-row {
+  /* Each row contains a title and a 2-column grid */
+}
+
+.insights-row-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.insights-table-title-current {
+  background: linear-gradient(135deg, #E0F2FE, #DBEAFE);
+  color: #1E40AF;
+}
+
+.insights-table-title-comparison {
+  background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+  color: #92400E;
+}
+
+.quick-insights-loading,
+.quick-insights-error,
+.quick-insights-empty {
+  padding: var(--space-xl);
+  text-align: center;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.quick-insights-error {
+  color: var(--color-error);
+}
+
+.insights-table-container {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.insights-table-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  padding: var(--space-md);
+  margin: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+
+/* PrimeVue DataTable customization */
+.insights-datatable {
+  font-size: var(--font-size-sm);
+}
+
+.keyword-text {
+  font-weight: 500;
+}
+
+.search-terms-count {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-left: 4px;
+}
+
+.metric-value {
+  font-weight: 600;
+}
+
+.secondary-value {
+  color: var(--color-text-muted);
+}
+
+/* Search Terms Expansion */
+.search-terms-list {
+  padding: var(--space-sm) var(--space-md);
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--color-background);
+}
+
+.search-term-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 6px 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.search-term-item:last-child {
+  border-bottom: none;
+}
+
+.search-term-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-term-cost,
+.search-term-clicks {
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.no-search-terms {
+  padding: var(--space-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Responsive Quick Insights */
+@media (max-width: 1024px) {
+  .quick-insights-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

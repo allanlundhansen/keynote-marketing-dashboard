@@ -205,7 +205,7 @@ function getGeographicData(dateFrom, dateTo) {
  * @param {string} compareDateTo - Comparison end month YYYY-MM (optional)
  * @param {Array} campaignIds - Array of campaign IDs to filter by (optional)
  * @param {number} limit - Number of top keywords to return (default 5)
- * @returns {Object} { byCost: [...], byClicks: [...] } with current and comparison data
+ * @returns {Object} { current: { byCost, byClicks }, comparison: { byCost, byClicks } | null }
  */
 function getKeywordsSummary(dateFrom, dateTo, compareDateFrom, compareDateTo, campaignIds, limit) {
   Logger.log('getKeywordsSummary() called');
@@ -268,6 +268,7 @@ function getKeywordsSummary(dateFrom, dateTo, compareDateFrom, compareDateTo, ca
       cost: k.cost,
       clicks: k.clicks,
       impressions: k.impressions,
+      ctr: k.impressions > 0 ? k.clicks / k.impressions : 0,
       searchTerms: Object.values(k.searchTerms)
         .sort((a, b) => b.cost - a.cost)
         .slice(0, 15)
@@ -283,56 +284,42 @@ function getKeywordsSummary(dateFrom, dateTo, compareDateFrom, compareDateTo, ca
     return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
   }
 
+  // Helper to get top keywords sorted and limited
+  function getTopKeywords(data, sortField, topN) {
+    return [...data].sort((a, b) => b[sortField] - a[sortField]).slice(0, topN);
+  }
+
   // Get current period data
   const currentData = aggregateKeywordsForPeriod(allData, dateFrom, dateTo, campaignIds);
   Logger.log(`  Current period keywords: ${currentData.length}`);
 
-  // Get comparison period data if specified
-  let comparisonData = null;
-  if (compareDateFrom && compareDateTo) {
-    comparisonData = aggregateKeywordsForPeriod(allData, compareDateFrom, compareDateTo, campaignIds);
-    Logger.log(`  Comparison period keywords: ${comparisonData.length}`);
-  }
-
-  // Build comparison lookup for quick access
-  const comparisonLookup = {};
-  if (comparisonData) {
-    comparisonData.forEach(k => {
-      comparisonLookup[k.keyword] = k;
-    });
-  }
-
-  // Helper to add comparison data and calculate change
-  function enrichWithComparison(keywords) {
-    return keywords.map(k => {
-      const comp = comparisonLookup[k.keyword];
-      return {
-        keyword: k.keyword,
-        cost: k.cost,
-        clicks: k.clicks,
-        impressions: k.impressions,
-        ctr: k.impressions > 0 ? k.clicks / k.impressions : 0,
-        searchTerms: k.searchTerms || [],
-        prevCost: comp ? comp.cost : null,
-        prevClicks: comp ? comp.clicks : null,
-        costChange: comp && comp.cost > 0 ? ((k.cost - comp.cost) / comp.cost) * 100 : null,
-        clicksChange: comp && comp.clicks > 0 ? ((k.clicks - comp.clicks) / comp.clicks) * 100 : null
-      };
-    });
-  }
-
-  // Sort by cost and get top N
-  const byCost = [...currentData].sort((a, b) => b.cost - a.cost).slice(0, limit);
-
-  // Sort by clicks and get top N
-  const byClicks = [...currentData].sort((a, b) => b.clicks - a.clicks).slice(0, limit);
-
-  const result = {
-    byCost: enrichWithComparison(byCost),
-    byClicks: enrichWithComparison(byClicks)
+  // Build current result
+  const current = {
+    byCost: getTopKeywords(currentData, 'cost', limit),
+    byClicks: getTopKeywords(currentData, 'clicks', limit)
   };
 
-  Logger.log(`  Returning ${result.byCost.length} by cost, ${result.byClicks.length} by clicks`);
+  // Get comparison period data if specified (independently ranked)
+  let comparison = null;
+  if (compareDateFrom && compareDateTo) {
+    const comparisonData = aggregateKeywordsForPeriod(allData, compareDateFrom, compareDateTo, campaignIds);
+    Logger.log(`  Comparison period keywords: ${comparisonData.length}`);
+
+    comparison = {
+      byCost: getTopKeywords(comparisonData, 'cost', limit),
+      byClicks: getTopKeywords(comparisonData, 'clicks', limit)
+    };
+  }
+
+  const result = {
+    current: current,
+    comparison: comparison
+  };
+
+  Logger.log(`  Returning current: ${current.byCost.length} by cost, ${current.byClicks.length} by clicks`);
+  if (comparison) {
+    Logger.log(`  Returning comparison: ${comparison.byCost.length} by cost, ${comparison.byClicks.length} by clicks`);
+  }
   return result;
 }
 

@@ -175,7 +175,6 @@
         <nav class="app-nav">
           <ul>
             <li><router-link to="/overview">Overview</router-link></li>
-            <li><router-link to="/trends">Trends</router-link></li>
             <li><router-link to="/campaigns">Campaigns</router-link></li>
             <li><router-link to="/devices">Devices</router-link></li>
             <li><router-link to="/types">Types</router-link></li>
@@ -219,7 +218,6 @@
 
     <!-- Views -->
     <?!= include('views/OverviewView') ?>
-    <?!= include('views/TrendsView') ?>
     <?!= include('views/CampaignsView') ?>
     <?!= include('views/DevicesView') ?>
     <?!= include('views/TypesView') ?>
@@ -230,7 +228,6 @@
       const routes = [
         { path: '/', redirect: '/overview' },
         { path: '/overview', component: OverviewView, name: 'overview' },
-        { path: '/trends', component: TrendsView, name: 'trends' },
         { path: '/campaigns', component: CampaignsView, name: 'campaigns' },
         { path: '/devices', component: DevicesView, name: 'devices' },
         { path: '/types', component: TypesView, name: 'types' },
@@ -300,6 +297,7 @@
       app.component('TabPanel', PrimeVue.TabPanel);
       app.component('Drawer', PrimeVue.Drawer);
       app.component('ToggleSwitch', PrimeVue.ToggleSwitch);
+      app.component('SelectButton', PrimeVue.SelectButton);
 
       // Custom components
       app.component('DateRangePicker', DateRangePicker);

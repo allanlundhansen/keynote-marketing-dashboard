@@ -463,3 +463,323 @@ Automatic detection of anomalies (e.g., "Cost up 50% vs last month") could be va
 - No proactive anomaly detection in Phase 2
 - User must actively check dashboard for issues
 - Can add in future phase based on usage patterns
+
+---
+
+## ADR-024: Overview Dashboard Structure - Hierarchical Metrics + Funnel Visualization
+
+- **Status**: Accepted
+
+### Context
+
+The Overview (Dashboard Home) needs to answer "Is my marketing working?" at a glance. The original spec listed 10 metrics to display as equal-weight cards, but this approach:
+
+1. Doesn't tell a story - just shows data without prioritization
+2. Doesn't highlight the funnel - the core value proposition of this project
+3. Forces users to mentally process which metrics matter most
+4. Misses the unique insight this dashboard can provide: WHERE in the funnel problems occur
+
+### Decision
+
+Structure the Overview in **5 hierarchical sections** with distinct purposes:
+
+1. **Primary KPIs (4 large cards)**: Cost, Conversions, Cost/Conversion, Engagement Rate
+2. **Funnel Visualization**: Impressions → Clicks → Sessions → Engaged → Conversions with rates
+3. **Supporting Metrics (6 smaller cards)**: Impressions, Clicks, CTR, Sessions, Avg CPC, Cost/Session
+4. **Trend Sparkline**: Cost + Conversions over time
+5. **Quick Insights (lazy-loaded)**: Top keywords by cost/conversions
+
+### Rationale
+
+**1. Primary KPIs (4 metrics, not 10)**
+
+These 4 metrics directly answer "Is my marketing working?":
+- **Cost** = what we're spending
+- **Conversions** = what we're getting (business outcome)
+- **Cost/Conversion** = THE efficiency metric - answers "is this profitable?"
+- **Engagement Rate** = funnel health indicator (Engaged Sessions / Sessions)
+
+Other metrics (Impressions, Clicks, CTR, etc.) are context, not the answer. Elevating 4 metrics creates visual hierarchy and reduces cognitive load.
+
+**2. Funnel Visualization**
+
+This is the **core value proposition** of the entire project. From implementation_plan.md:
+
+> "Analyze the full funnel: Ads → Landing Page → Booking Inquiry"
+> "Conversion funnel drop-off (where are we losing people?)"
+
+A visual funnel showing conversion rates at each stage provides instant diagnostic value:
+- Low CTR → Ad creative/targeting problem
+- Low Click→Session rate → Landing page load or ad/page mismatch
+- Low Session→Engaged rate → Landing page content problem
+- Low Engaged→Conversion rate → CTA/offer problem
+
+No generic dashboard provides this. It's our differentiation.
+
+**3. Supporting Metrics (secondary visual weight)**
+
+Impressions, Clicks, CTR, Sessions, Avg CPC, Cost/Session are useful context but shouldn't compete with primary KPIs. Smaller cards, positioned below primary metrics.
+
+**4. Trend Sparkline**
+
+Addresses the explicit goal: "Understand if campaigns are underperforming vs. external factors (seasonality, economy)". A simple line chart showing Cost + Conversions trends over time.
+
+**5. Quick Insights (lazy-loaded)**
+
+Keywords are the actionable lever for Google Ads optimization. Showing top keywords by cost and conversions surfaces actionable insights on the main page without requiring drill-down navigation.
+
+Lazy-loading strategy preserves <2s initial load requirement (keywords come from Raw sheets, which are large).
+
+### Alternatives Considered
+
+| Alternative | Why Rejected |
+|-------------|--------------|
+| 10 equal-weight metric cards | Overwhelming; doesn't prioritize; doesn't tell a story |
+| Funnel in separate "Funnel" tab | Hides core value; Overview should preview key insights |
+| No keyword insights on Overview | Hides actionable data; forces extra clicks for common task |
+| Load all sections synchronously | Would break <2s load requirement for keywords |
+
+### Consequences
+
+**Positive:**
+- Clear visual hierarchy guides user attention
+- Funnel visualization provides unique diagnostic value
+- Keyword insights surface actionable data immediately
+- Lazy-loading maintains fast initial load
+- Design directly serves project goals
+
+**Negative:**
+- More complex than simple metric cards
+- Funnel visualization component requires custom development
+- Lazy-loading adds async complexity
+
+---
+
+## ADR-025: PrimeVue 4 Upgrade (from PrimeVue 3)
+
+- **Status**: Accepted
+
+### Context
+
+Initial implementation used PrimeVue 3 via CDN. PrimeVue 4 was released with significant improvements and a new theming system.
+
+### Decision
+
+Upgrade to **PrimeVue 4** with the new Aura theme via `@primeuix/themes`.
+
+```html
+<script src="https://unpkg.com/primevue/umd/primevue.min.js"></script>
+<script src="https://unpkg.com/@primeuix/themes/umd/aura.js"></script>
+```
+
+Configuration:
+```javascript
+app.use(PrimeVue.Config, {
+  theme: {
+    preset: PrimeUIX.Themes.Aura,
+    options: {
+      darkModeSelector: false  // Force light mode
+    }
+  }
+});
+```
+
+### Rationale
+
+1. **Latest version**: PrimeVue 4 is current; PrimeVue 3 will eventually lose support
+2. **Better theming**: New preset-based theming system is cleaner
+3. **Component improvements**: DatePicker, MultiSelect, Drawer have better APIs
+4. **Dark mode control**: Can explicitly disable dark mode to prevent system preference issues
+
+### Key Changes from PrimeVue 3
+
+| PrimeVue 3 | PrimeVue 4 |
+|------------|------------|
+| `Calendar` | `DatePicker` |
+| `Sidebar` | `Drawer` |
+| CSS theme files | `@primeuix/themes` presets |
+| `PrimeVue.Themes.Aura` | `PrimeUIX.Themes.Aura` |
+
+### Consequences
+
+**Positive:**
+- Modern, supported version
+- Cleaner theming system
+- Better component APIs
+- Explicit dark mode control
+
+**Negative:**
+- Component name changes required code updates
+- Theme configuration syntax changed
+
+---
+
+## ADR-026: Flexible Comparison Mode
+
+- **Status**: Accepted
+
+### Context
+
+Users need to compare current performance against historical data. Initial implementation had only a YoY (Year-over-Year) toggle.
+
+### Decision
+
+Implement **flexible comparison mode** with multiple options:
+
+1. **None** - No comparison
+2. **Previous Period** - Compare to the immediately preceding period of same length
+3. **Same Period Last Year** - Compare to same months in previous year
+4. **Custom** - User selects specific comparison date range
+
+### Rationale
+
+1. **MoM analysis**: Users often want Month-over-Month comparison, not just YoY
+2. **Seasonal patterns**: Sometimes need to compare to specific past periods (e.g., last Q4)
+3. **Flexibility**: Different analysis questions require different comparison baselines
+
+### Implementation
+
+State structure:
+```javascript
+dateRange: {
+  from: '2025-01',
+  to: '2025-12',
+  comparisonMode: 'none',      // 'none' | 'previous' | 'lastYear' | 'custom'
+  compareFrom: null,           // For custom mode
+  compareTo: null              // For custom mode
+}
+```
+
+Comparison range calculation:
+- **previous**: Shift primary range back by its length (e.g., 12 months → previous 12 months)
+- **lastYear**: Same months, year - 1
+- **custom**: User-specified dates
+
+### Consequences
+
+**Positive:**
+- Supports multiple analysis scenarios
+- User has full control over comparison baseline
+- Persisted in URL for bookmarking
+
+**Negative:**
+- More complex UI than simple toggle
+- Custom mode requires additional date pickers
+
+---
+
+## ADR-027: Merge Trend Analysis into Overview (No Separate Trends View)
+
+- **Status**: Accepted
+
+### Context
+
+The original spec included a dedicated Trends View (`#/trends`) with:
+- User-selectable metric dropdowns (primary + secondary)
+- Dual Y-axis chart support
+- Full customization of which metrics to compare
+
+However, the Overview already has a trend sparkline showing Cost & Clicks with comparison overlay. The question arose: does a separate Trends view add value, or is it redundant?
+
+### Decision
+
+**Merge trend analysis into the Overview** via metric presets instead of building a separate Trends view.
+
+Implementation:
+- Add a `SelectButton` above the Overview sparkline
+- Offer 4 preset metric combinations:
+  1. Cost & Clicks (default)
+  2. Cost & Sessions
+  3. Sessions & Engaged Sessions
+  4. Clicks & Impressions
+- Remove the `/trends` route entirely
+- Remove "Trends" from sidebar navigation
+
+### Rationale
+
+1. **Redundancy**: The Overview sparkline already provides trend visualization. A separate page for "more trend options" adds navigation friction without proportional value.
+
+2. **"Pick any metric" is over-engineered**: In practice, dashboard users rarely use fully flexible metric selectors. They look at defaults, get their answer, and leave. Preset combinations cover 95% of use cases.
+
+3. **Single-page principle**: Everything a user needs for quick analysis should be on Overview. Requiring navigation to see "Sessions trend" instead of "Cost trend" is poor UX.
+
+4. **Development efficiency**: Building metric dropdowns, dual Y-axis logic, and maintaining parity with comparison modes requires effort for questionable ROI.
+
+5. **The funnel already shows all metrics**: The Overview funnel visualization displays all key metrics (Impressions, Clicks, Sessions, Engaged, Conversions) with rates. A trend chart is supplementary context, not primary analysis.
+
+### Alternatives Considered
+
+| Alternative | Why Rejected |
+|-------------|--------------|
+| Build full Trends view as spec'd | Over-engineered for single-user dashboard; redundant with Overview |
+| Skip trend customization entirely | Loses flexibility for users who want to see Sessions trends |
+| Fully customizable dropdowns on Overview | Too complex; preset combinations are simpler and sufficient |
+
+### Consequences
+
+**Positive:**
+- Simpler navigation (one fewer route)
+- All trend analysis on single page
+- Lower development effort
+- Presets guide users to useful combinations
+- Comparison overlay works automatically with all presets
+
+**Negative:**
+- Cannot compare arbitrary metrics (e.g., CTR vs Avg CPC)
+- Limited to 4 preset combinations
+- Power users wanting full flexibility must use raw Sheets data
+
+---
+
+## ADR-028: Consolidate Drill-Down Views into Campaign Detail
+
+- **Status**: Accepted
+
+### Context
+
+The original spec separated drill-down views into two places:
+- **Section 7.3** (tasks) / **Section 3** (requirements): "Campaign drill-down with keywords and search terms tabs"
+- **Section 12** (tasks) / **Section 8** (requirements): "Drill-Down Views" with Keywords, Search Terms, Landing Pages as separate routes
+
+This created circular dependencies and didn't reflect actual user flow. You couldn't implement 7.3 without implementing 12.1/12.2, and the separation was artificial.
+
+### Decision
+
+**Consolidate all drill-down functionality into Campaign Detail View** as tabs, not separate routes.
+
+User flow:
+```
+Campaign List (#/campaigns)
+    └── Click row → Campaign Detail (#/campaigns/:id)
+                        ├── Keywords Tab
+                        ├── Search Terms Tab
+                        └── Landing Pages Tab
+```
+
+### Rationale
+
+1. **Reflects actual user journey**: Users don't navigate directly to "Keywords" - they go to a campaign and then explore its keywords.
+
+2. **Eliminates redundancy**: One place in the spec for drill-down views, not two.
+
+3. **Simpler routing**: Fewer routes to maintain. Campaign context is preserved in the URL (`/campaigns/:id`).
+
+4. **Better UX**: Tabs keep user in context. No back-and-forth between separate pages.
+
+### Changes Made
+
+- **tasks.md**: Consolidated Section 12 into Section 7 (Campaign Analysis)
+- **requirements.md**: Consolidated Section 8 into Section 3 (Campaign Analysis)
+- **design.md**: Updated component tree and removed standalone drill-down routes
+
+### Consequences
+
+**Positive:**
+- Clearer spec organization
+- Single source of truth for drill-down implementation
+- Simpler routing
+- Better user experience (tabs vs separate pages)
+
+**Negative:**
+- Can't deep-link directly to Keywords for a campaign (must go through Campaign Detail)
+- Tab state not preserved in URL (could add `?tab=keywords` if needed later)

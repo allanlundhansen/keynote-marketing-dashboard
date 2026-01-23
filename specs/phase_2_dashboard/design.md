@@ -86,17 +86,16 @@ The dashboard is a Vue 3 single-page application (SPA) served by Google Apps Scr
 const routes = [
   { path: '/', redirect: '/overview' },
   { path: '/overview', component: OverviewView, name: 'overview' },
-  { path: '/trends', component: TrendsView, name: 'trends' },
   { path: '/campaigns', component: CampaignsView, name: 'campaigns' },
   { path: '/campaigns/:id', component: CampaignDetailView, name: 'campaign-detail' },
   { path: '/devices', component: DevicesView, name: 'devices' },
   { path: '/types', component: TypesView, name: 'types' },
   { path: '/countries', component: CountriesView, name: 'countries' },
-  { path: '/conversions', component: ConversionsView, name: 'conversions' },
-  { path: '/keywords', component: KeywordsView, name: 'keywords' },
-  { path: '/search-terms', component: SearchTermsView, name: 'search-terms' },
-  { path: '/landing-pages', component: LandingPagesView, name: 'landing-pages' }
+  { path: '/conversions', component: ConversionsView, name: 'conversions' }
 ];
+
+// Note: Keywords, Search Terms, and Landing Pages are now tabs within
+// CampaignDetailView, not separate routes. Access via #/campaigns/:id
 
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
@@ -108,21 +107,20 @@ const router = VueRouter.createRouter({
 
 | URL | View | Description |
 |-----|------|-------------|
-| `#/overview` | Overview | Dashboard home with summary cards |
-| `#/trends` | Trends | Time series charts |
+| `#/overview` | Overview | Dashboard home with summary cards, funnel, trend chart |
 | `#/campaigns` | Campaigns | Campaign list table |
-| `#/campaigns/123` | Campaign Detail | Single campaign with drill-down |
+| `#/campaigns/123` | Campaign Detail | Campaign metrics + tabs for Keywords, Search Terms, Landing Pages |
 | `#/devices` | Devices | Device breakdown |
+| `#/types` | Types | Campaign type breakdown |
 | `#/countries` | Countries | Geographic analysis |
 | `#/conversions` | Conversions | Event selection and conversion metrics |
-| `#/keywords?campaign=123` | Keywords | Keyword drill-down filtered by campaign |
 
 ### Query Parameters for Filters
 
 Filters can be persisted in URL for bookmarking/sharing:
 
 ```
-#/trends?dateFrom=2025-01&dateTo=2026-01&campaigns=123,456&devices=DESKTOP,MOBILE
+#/overview?from=2025-01&to=2026-01&campaigns=123,456&devices=DESKTOP,MOBILE
 ```
 
 ## Page Layout
@@ -132,37 +130,124 @@ Filters can be persisted in URL for bookmarking/sharing:
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  HEADER                                                    Data as of: ...  │
-│  Marketing Dashboard                          [Date Range ▼] [Compare □]    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ FILTERS                                                                     │
-│ [Campaign ▼] [Type ▼] [Device ▼]                              [Clear All]   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌──────┐ │
-│  │  Cost   │  │ Clicks  │  │Sessions │  │Engaged  │  │Convers. │  │ CPC  │ │
-│  │ $12,345 │  │  1,234  │  │   890   │  │   567   │  │   45    │  │$10.00│ │
-│  │  +12%   │  │  -5%    │  │  +8%    │  │  +15%   │  │  +20%   │  │ -3%  │ │
-│  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └──────┘ │
-│                                                                             │
+│  Marketing Dashboard                                                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ NAVIGATION TABS                                                             │
-│ [Overview] [Trends] [Campaigns] [Devices] [Types] [Countries] [Conversions] │
+│ [Overview] [Campaigns] [Devices] [Types] [Countries] [Conversions]          │
 ├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  [⚙ Filters]  ← Opens sidebar drawer with filters & date range             │
 │                                                                             │
 │                          MAIN CONTENT AREA                                  │
 │                                                                             │
-│   (Changes based on selected tab)                                           │
-│                                                                             │
-│   Overview:   Summary + mini charts                                         │
-│   Trends:     Time series chart with metric selector                        │
-│   Campaigns:  Sortable table + drill-down links                             │
-│   Devices:    Device breakdown chart + table                                │
-│   Types:      Campaign type breakdown                                       │
-│   Countries:  Geographic breakdown                                          │
-│   Conversions: Event selector + conversion metrics                          │
+│   (Changes based on selected tab - see Overview Layout below)               │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Overview Layout (Dashboard Home)
+
+The Overview is structured in 5 sections, ordered by importance:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SECTION 1: PRIMARY KPIs (4 large cards - "Is my marketing working?")        │
+│                                                                             │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐ │
+│  │  TOTAL COST   │  │  CONVERSIONS  │  │ COST/CONVERS. │  │ ENGAGE RATE   │ │
+│  │   $45,230     │  │      127      │  │    $356.14    │  │    68.2%      │ │
+│  │    ▲ +12%     │  │    ▲ +23%     │  │    ▼ -8%      │  │    ▲ +5%      │ │
+│  └───────────────┘  └───────────────┘  └───────────────┘  └───────────────┘ │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SECTION 2: FUNNEL VISUALIZATION ("Where am I losing people?")               │
+│                                                                             │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌────────┐ │
+│  │Impressions│──▶│  Clicks  │──▶│ Sessions │──▶│ Engaged  │──▶│Converts │ │
+│  │  150,000  │    │   7,500  │    │   7,200  │    │   4,800  │    │   127   │ │
+│  │           │    │   5.0%   │    │  96.0%   │    │  66.7%   │    │  2.6%   │ │
+│  │           │    │   ▲ +0.3 │    │   ▼ -2   │    │   ▲ +4   │    │  ▲ +0.5 │ │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘    └────────┘ │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SECTION 3: SUPPORTING METRICS (6 smaller cards - context)                   │
+│                                                                             │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │Impress. │ │ Clicks  │ │   CTR   │ │Sessions │ │Avg CPC  │ │Cost/Sess│   │
+│  │ 150,000 │ │  7,500  │ │  5.0%   │ │  7,200  │ │  $6.03  │ │  $6.28  │   │
+│  │  +15%   │ │  +18%   │ │  +0.3%  │ │  +12%   │ │  -5%    │ │  +3%    │   │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SECTION 4: TREND SPARKLINE (with metric presets and comparison overlay)     │
+│                                                                             │
+│  [Cost & Clicks ▼] ← Metric preset selector                                 │
+│                                                                             │
+│  Cost & Clicks Over Time                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │     $                                                    Conversions │   │
+│  │  5k ┤  ╭──╮         ← solid: current period                   │ 20  │   │
+│  │  4k ┤ ╭╯  ╰╮    ╭─╮                                           │ 15  │   │
+│  │  3k ┤╭╯- - ╰- - ╯ ╰╮  ← dashed: comparison period             │ 10  │   │
+│  │  2k ┼╯             ╰──╯                                        │  5  │   │
+│  │  1k ┤                                                          │  0  │   │
+│  │     └────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬──┘     │   │
+│  │         M1   M2   M3   M4   M5   M6   M7   M8   M9  M10  M11  M12   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│  [── Cost]  [── Conversions]  [- - Cost (prev)]  [- - Conv (prev)]         │
+│                                                                             │
+│  Note: X-axis shows relative months (M1, M2...) so current and comparison   │
+│  periods align. Tooltip shows all 4 values on hover.                        │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ SECTION 5: QUICK INSIGHTS (lazy-loaded, with comparison data)               │
+│                                                                             │
+│  Top Keywords by Cost                    Top Keywords by Conversions        │
+│  ┌───────────────────────────────────┐   ┌───────────────────────────────┐  │
+│  │ Keyword         Cost   vs Prev    │   │ Keyword        Conv  vs Prev  │  │
+│  │ keynote speaker $8,230  ▲ +24%    │   │ motivational    31   ▲ +40%   │  │
+│  │ motivational    $4,120  ▼ -12%    │   │ keynote spk     23   ▼ -8%    │  │
+│  │ conference spkr $3,890  ▲ +8%     │   │ leadership      19   ▲ +15%   │  │
+│  │ corporate evts  $2,560  ── 0%     │   │ conference      18   ▲ +5%    │  │
+│  │ leadership      $2,340  ▲ +31%    │   │ corporate       12   ▼ -20%   │  │
+│  └───────────────────────────────────┘   └───────────────────────────────┘  │
+│                                                                             │
+│  Note: "vs Prev" shows % change vs comparison period. Green ▲ = increase,   │
+│  Red ▼ = decrease. For cost, increase is typically bad (shown in red).      │
+│  When comparison mode is "none", "vs Prev" column shows "—".                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Design Rationale:**
+
+1. **Primary KPIs (Section 1):** Answer "Is my marketing working?" with 4 metrics:
+   - Total Cost = what we're spending
+   - Conversions = what we're getting (business outcome)
+   - Cost/Conversion = efficiency (the key ROI metric)
+   - Engagement Rate = funnel health indicator
+
+2. **Funnel Visualization (Section 2):** The core value proposition. Shows WHERE in the funnel users are dropping off:
+   - Low CTR = ad creative/targeting problem
+   - Low Click→Session = landing page load or ad/page mismatch
+   - Low Session→Engaged = landing page content problem
+   - Low Engaged→Conversion = CTA/offer problem
+
+3. **Supporting Metrics (Section 3):** Context metrics that don't answer the core question but provide useful detail.
+
+4. **Trend Sparkline (Section 4):** Shows trends over time with a metric preset selector. Users can choose from preset combinations (Cost & Clicks, Cost & Sessions, Sessions & Engaged, Clicks & Impressions) without needing a separate Trends page. When comparison mode is enabled, overlays the comparison period as dashed lines. This reveals trend PATTERN differences - not just point-in-time comparison but whether current period follows the same seasonal curve as comparison period. Divergences become immediately visible: "We spiked in March last year but not this year."
+
+5. **Quick Insights (Section 5):** Lazy-loaded to preserve <2s initial load. Surfaces actionable keyword data with comparison context via "vs Prev" column. This makes insights actionable: "Keyword X cost up 24% - investigate" or "Keyword Y conversions up 40% - allocate more budget."
+
+**Comparison Strategy:**
+All sections support comparison mode when enabled:
+- Sections 1, 2, 3: Show % change indicators (▲/▼) on cards
+- Section 4: Overlay comparison period as dashed lines
+- Section 5: "vs Prev" column shows % change per keyword
+
+**Loading Strategy:**
+- Sections 1-4 load immediately from Summary sheets (<2s)
+- Section 5 loads asynchronously after main render (Keywords from Raw sheet)
 
 ### Mobile Layout (<768px)
 
@@ -220,14 +305,20 @@ App (root)
 │
 └── <router-view> (renders current route's component)
     ├── OverviewView
-    ├── TrendsView
-    │   ├── MetricSelector (PrimeVue Dropdown)
-    │   └── TrendChart (PrimeVue Chart)
+    │   ├── MetricPresetSelector (PrimeVue SelectButton)
+    │   └── TrendChart (Chart.js)
     ├── CampaignsView
     │   └── CampaignTable (PrimeVue DataTable)
-    ├── CampaignDetailView
-    │   ├── CampaignSummary
-    │   └── DrillDownTabs (Keywords, SearchTerms, LandingPages)
+    ├── CampaignDetailView (#/campaigns/:id)
+    │   ├── CampaignSummary (metrics header)
+    │   ├── BackButton
+    │   └── TabView (PrimeVue Tabs)
+    │       ├── KeywordsTab
+    │       │   └── KeywordTable (PrimeVue DataTable, expandable rows)
+    │       ├── SearchTermsTab
+    │       │   └── SearchTermTable (PrimeVue DataTable)
+    │       └── LandingPagesTab
+    │           └── LandingPageTable (PrimeVue DataTable)
     ├── DevicesView
     │   ├── DeviceChart (PrimeVue Chart - doughnut)
     │   └── DeviceTable (PrimeVue DataTable)
@@ -236,15 +327,9 @@ App (root)
     │   └── TypeTable
     ├── CountriesView
     │   └── CountryTable (PrimeVue DataTable)
-    ├── ConversionsView
-    │   ├── EventSelector (PrimeVue MultiSelect)
-    │   └── ConversionMetrics
-    ├── KeywordsView (drill-down)
-    │   └── KeywordTable (PrimeVue DataTable)
-    ├── SearchTermsView (drill-down)
-    │   └── SearchTermTable
-    └── LandingPagesView (drill-down)
-        └── LandingPageTable
+    └── ConversionsView
+        ├── EventSelector (PrimeVue MultiSelect)
+        └── ConversionMetrics
 ```
 
 ### File Structure

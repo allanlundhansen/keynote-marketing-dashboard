@@ -195,6 +195,134 @@ function getGeographicData(dateFrom, dateTo) {
   };
 }
 
+/**
+ * Get top keywords summary for Quick Insights on Overview
+ * Reads from Summary_Keywords (pre-aggregated by YearMonth × Campaign × Keyword × MatchType)
+ *
+ * @param {string} dateFrom - Start month YYYY-MM
+ * @param {string} dateTo - End month YYYY-MM
+ * @param {string} compareDateFrom - Comparison start month YYYY-MM (optional)
+ * @param {string} compareDateTo - Comparison end month YYYY-MM (optional)
+ * @param {Array} campaignIds - Array of campaign IDs to filter by (optional)
+ * @param {number} limit - Number of top keywords to return (default 5)
+ * @returns {Object} { current: { byCost, byClicks }, comparison: { byCost, byClicks } | null }
+ */
+function getKeywordsSummary(dateFrom, dateTo, compareDateFrom, compareDateTo, campaignIds, limit) {
+  Logger.log('getKeywordsSummary() called');
+  Logger.log(`  dateFrom: ${dateFrom}, dateTo: ${dateTo}`);
+  Logger.log(`  compareDateFrom: ${compareDateFrom}, compareDateTo: ${compareDateTo}`);
+  Logger.log(`  campaignIds: ${JSON.stringify(campaignIds)}, limit: ${limit}`);
+
+  limit = limit || 5;
+
+  const dashboardSpreadsheet = SpreadsheetApp.openById(Config.SPREADSHEETS.DASHBOARD);
+  const sheet = dashboardSpreadsheet.getSheetByName(Config.SHEETS.SUMMARY_KEYWORDS);
+  const allData = sheetToObjects(sheet);
+
+  Logger.log(`  Total Summary_Keywords rows: ${allData.length}`);
+
+  // Helper to filter and aggregate keywords for a date range
+  function aggregateKeywordsForPeriod(data, from, to, filterCampaigns) {
+    // Filter by date range
+    let filtered = data.filter(row => {
+      const ym = normalizeYearMonth(row.YearMonth);
+      return ym && ym >= from && ym <= to;
+    });
+
+    // Filter by campaigns if specified
+    if (filterCampaigns && filterCampaigns.length > 0) {
+      filtered = filtered.filter(row => filterCampaigns.includes(String(row.CampaignId)));
+    }
+
+    // Aggregate by KeywordText (sum across months, campaigns, match types)
+    // Also merge search terms from each row
+    const byKeyword = {};
+    filtered.forEach(row => {
+      const keyword = row.KeywordText;
+      if (!byKeyword[keyword]) {
+        byKeyword[keyword] = { keyword: keyword, cost: 0, clicks: 0, impressions: 0, searchTerms: {} };
+      }
+      byKeyword[keyword].cost += row.Cost || 0;
+      byKeyword[keyword].clicks += row.Clicks || 0;
+      byKeyword[keyword].impressions += row.Impressions || 0;
+
+      // Merge search terms (parse JSON, aggregate by term)
+      try {
+        const terms = JSON.parse(row.SearchTerms || '[]');
+        terms.forEach(st => {
+          if (!byKeyword[keyword].searchTerms[st.term]) {
+            byKeyword[keyword].searchTerms[st.term] = { term: st.term, cost: 0, clicks: 0, impressions: 0 };
+          }
+          byKeyword[keyword].searchTerms[st.term].cost += st.cost || 0;
+          byKeyword[keyword].searchTerms[st.term].clicks += st.clicks || 0;
+          byKeyword[keyword].searchTerms[st.term].impressions += st.impressions || 0;
+        });
+      } catch (e) {
+        // Ignore JSON parse errors
+      }
+    });
+
+    // Convert searchTerms object to sorted array (top 15 by cost)
+    return Object.values(byKeyword).map(k => ({
+      keyword: k.keyword,
+      cost: k.cost,
+      clicks: k.clicks,
+      impressions: k.impressions,
+      ctr: k.impressions > 0 ? k.clicks / k.impressions : 0,
+      searchTerms: Object.values(k.searchTerms)
+        .sort((a, b) => b.cost - a.cost)
+        .slice(0, 15)
+    }));
+  }
+
+  // Helper to normalize YearMonth (handles ISO date strings)
+  function normalizeYearMonth(ym) {
+    if (!ym) return null;
+    if (typeof ym === 'string' && /^\d{4}-\d{2}$/.test(ym)) return ym;
+    const d = new Date(ym);
+    if (isNaN(d.getTime())) return null;
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  }
+
+  // Helper to get top keywords sorted and limited
+  function getTopKeywords(data, sortField, topN) {
+    return [...data].sort((a, b) => b[sortField] - a[sortField]).slice(0, topN);
+  }
+
+  // Get current period data
+  const currentData = aggregateKeywordsForPeriod(allData, dateFrom, dateTo, campaignIds);
+  Logger.log(`  Current period keywords: ${currentData.length}`);
+
+  // Build current result
+  const current = {
+    byCost: getTopKeywords(currentData, 'cost', limit),
+    byClicks: getTopKeywords(currentData, 'clicks', limit)
+  };
+
+  // Get comparison period data if specified (independently ranked)
+  let comparison = null;
+  if (compareDateFrom && compareDateTo) {
+    const comparisonData = aggregateKeywordsForPeriod(allData, compareDateFrom, compareDateTo, campaignIds);
+    Logger.log(`  Comparison period keywords: ${comparisonData.length}`);
+
+    comparison = {
+      byCost: getTopKeywords(comparisonData, 'cost', limit),
+      byClicks: getTopKeywords(comparisonData, 'clicks', limit)
+    };
+  }
+
+  const result = {
+    current: current,
+    comparison: comparison
+  };
+
+  Logger.log(`  Returning current: ${current.byCost.length} by cost, ${current.byClicks.length} by clicks`);
+  if (comparison) {
+    Logger.log(`  Returning comparison: ${comparison.byCost.length} by cost, ${comparison.byClicks.length} by clicks`);
+  }
+  return result;
+}
+
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================

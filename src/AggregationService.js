@@ -36,6 +36,11 @@ const HEADERS_SUMMARY_CAMPAIGNS = [
   'L12M_Sessions', 'L12M_EngagedSessions', 'L12M_EventCounts'
 ];
 
+const HEADERS_SUMMARY_KEYWORDS = [
+  'YearMonth', 'CampaignId', 'CampaignName', 'KeywordText', 'MatchType',
+  'Cost', 'Clicks', 'Impressions', 'SearchTerms'
+];
+
 // =============================================================================
 // MAIN ENTRY POINT
 // =============================================================================
@@ -56,10 +61,14 @@ const AggregationService = {
       const rawAds = this.readRawData(Config.SPREADSHEETS.RAW_ADS_DAILY, Config.SHEETS.RAW_ADS_DAILY);
       const rawSessions = this.readRawData(Config.SPREADSHEETS.RAW_GA4_SESSIONS, Config.SHEETS.RAW_GA4_SESSIONS);
       const rawEvents = this.readRawData(Config.SPREADSHEETS.RAW_GA4_EVENTS, Config.SHEETS.RAW_GA4_EVENTS);
+      const rawKeywords = this.readRawData(Config.SPREADSHEETS.RAW_ADS_KEYWORDS, Config.SHEETS.RAW_ADS_KEYWORDS);
+      const rawSearchTerms = this.readRawData(Config.SPREADSHEETS.RAW_ADS_SEARCH_TERMS, Config.SHEETS.RAW_ADS_SEARCH_TERMS);
 
       Logger.log(`  Raw Ads: ${rawAds.length} rows`);
       Logger.log(`  Raw Sessions: ${rawSessions.length} rows`);
       Logger.log(`  Raw Events: ${rawEvents.length} rows`);
+      Logger.log(`  Raw Keywords: ${rawKeywords.length} rows`);
+      Logger.log(`  Raw SearchTerms: ${rawSearchTerms.length} rows`);
 
       // Step 2: Build campaign lookup from Ads data
       Logger.log('Step 2: Building campaign lookup...');
@@ -91,11 +100,17 @@ const AggregationService = {
       const summaryCampaigns = this.aggregateCampaigns(rawAds, rawSessions, rawEvents, campaignLookup);
       Logger.log(`  Summary Campaigns: ${summaryCampaigns.length} rows`);
 
-      // Step 8: Write summary sheets
-      Logger.log('Step 8: Writing summary sheets...');
+      // Step 8: Aggregate Keywords by YearMonth × Campaign × Keyword × MatchType (with search terms)
+      Logger.log('Step 8: Aggregating Keywords data (with search terms)...');
+      const summaryKeywords = this.aggregateKeywords(rawKeywords, rawSearchTerms);
+      Logger.log(`  Summary Keywords: ${summaryKeywords.length} rows`);
+
+      // Step 9: Write summary sheets
+      Logger.log('Step 9: Writing summary sheets...');
       this.writeSummary(Config.SHEETS.SUMMARY_MONTHLY, HEADERS_SUMMARY_MONTHLY, summaryMonthly);
       this.writeSummary(Config.SHEETS.SUMMARY_EVENTS, HEADERS_SUMMARY_EVENTS, summaryEvents);
       this.writeSummary(Config.SHEETS.SUMMARY_CAMPAIGNS, HEADERS_SUMMARY_CAMPAIGNS, summaryCampaigns);
+      this.writeSummary(Config.SHEETS.SUMMARY_KEYWORDS, HEADERS_SUMMARY_KEYWORDS, summaryKeywords);
 
       const duration = (new Date() - startTime) / 1000;
       Logger.log(`=== Aggregation Complete (${duration.toFixed(1)}s) ===`);
@@ -106,7 +121,8 @@ const AggregationService = {
         counts: {
           monthly: summaryMonthly.length,
           events: summaryEvents.length,
-          campaigns: summaryCampaigns.length
+          campaigns: summaryCampaigns.length,
+          keywords: summaryKeywords.length
         }
       };
 
@@ -495,6 +511,132 @@ const AggregationService = {
 
     // Sort by AllTime_Cost desc
     rows.sort((a, b) => b[6] - a[6]);
+
+    return rows;
+  },
+
+  /**
+   * Aggregates Keywords by YearMonth × CampaignId × KeywordText × MatchType
+   * Also embeds top 15 search terms per keyword from rawSearchTerms.
+   * Used for Quick Insights on the Overview dashboard and drill-down views.
+   */
+  aggregateKeywords: function(rawKeywords, rawSearchTerms) {
+    const SEARCH_TERMS_LIMIT = 15;
+
+    // Step 1: Aggregate keywords
+    const keywordAgg = {};
+
+    for (const row of rawKeywords) {
+      const yearMonth = this.getYearMonth(row.Date);
+      const campaignId = row.CampaignId;
+      const campaignName = row.CampaignName;
+      const keywordText = row.KeywordText;
+      const matchType = row.MatchType;
+
+      if (!yearMonth || !campaignId || !keywordText) continue;
+
+      const key = `${yearMonth}|${campaignId}|${keywordText}|${matchType || 'UNKNOWN'}`;
+
+      if (!keywordAgg[key]) {
+        keywordAgg[key] = {
+          YearMonth: yearMonth,
+          CampaignId: campaignId,
+          CampaignName: campaignName,
+          KeywordText: keywordText,
+          MatchType: matchType || 'UNKNOWN',
+          Cost: 0,
+          Clicks: 0,
+          Impressions: 0
+        };
+      }
+
+      keywordAgg[key].Cost += this.toNumber(row.Cost);
+      keywordAgg[key].Clicks += this.toNumber(row.Clicks);
+      keywordAgg[key].Impressions += this.toNumber(row.Impressions);
+    }
+
+    // Step 2: Aggregate search terms by YearMonth × CampaignId × KeywordText × SearchTerm
+    const searchTermAgg = {};
+
+    for (const row of rawSearchTerms) {
+      const yearMonth = this.getYearMonth(row.Date);
+      const campaignId = row.CampaignId;
+      const keywordText = row.KeywordText;
+      const searchTerm = row.SearchTerm;
+
+      if (!yearMonth || !campaignId || !keywordText || !searchTerm) continue;
+
+      const key = `${yearMonth}|${campaignId}|${keywordText}|${searchTerm}`;
+
+      if (!searchTermAgg[key]) {
+        searchTermAgg[key] = {
+          YearMonth: yearMonth,
+          CampaignId: campaignId,
+          KeywordText: keywordText,
+          SearchTerm: searchTerm,
+          Cost: 0,
+          Clicks: 0,
+          Impressions: 0
+        };
+      }
+
+      searchTermAgg[key].Cost += this.toNumber(row.Cost);
+      searchTermAgg[key].Clicks += this.toNumber(row.Clicks);
+      searchTermAgg[key].Impressions += this.toNumber(row.Impressions);
+    }
+
+    // Step 3: Group search terms by YearMonth × CampaignId × KeywordText (to match keywords)
+    // Note: Keywords have MatchType, search terms don't - we match on YearMonth + CampaignId + KeywordText
+    const searchTermsByKeyword = {};
+
+    for (const key in searchTermAgg) {
+      const st = searchTermAgg[key];
+      const keywordKey = `${st.YearMonth}|${st.CampaignId}|${st.KeywordText}`;
+
+      if (!searchTermsByKeyword[keywordKey]) {
+        searchTermsByKeyword[keywordKey] = [];
+      }
+
+      searchTermsByKeyword[keywordKey].push({
+        term: st.SearchTerm,
+        cost: st.Cost,
+        clicks: st.Clicks,
+        impressions: st.Impressions
+      });
+    }
+
+    // Sort each keyword's search terms by cost desc and limit to top N
+    for (const key in searchTermsByKeyword) {
+      searchTermsByKeyword[key].sort((a, b) => b.cost - a.cost);
+      searchTermsByKeyword[key] = searchTermsByKeyword[key].slice(0, SEARCH_TERMS_LIMIT);
+    }
+
+    // Step 4: Convert keywords to array and attach search terms
+    const rows = [];
+    for (const key in keywordAgg) {
+      const k = keywordAgg[key];
+      // Match search terms on YearMonth + CampaignId + KeywordText (ignoring MatchType)
+      const searchTermKey = `${k.YearMonth}|${k.CampaignId}|${k.KeywordText}`;
+      const searchTerms = searchTermsByKeyword[searchTermKey] || [];
+
+      rows.push([
+        k.YearMonth,
+        k.CampaignId,
+        k.CampaignName,
+        k.KeywordText,
+        k.MatchType,
+        k.Cost,
+        k.Clicks,
+        k.Impressions,
+        JSON.stringify(searchTerms)
+      ]);
+    }
+
+    // Sort by YearMonth desc, then Cost desc
+    rows.sort((a, b) => {
+      if (a[0] !== b[0]) return b[0].localeCompare(a[0]); // YearMonth desc
+      return b[5] - a[5]; // Cost desc
+    });
 
     return rows;
   },

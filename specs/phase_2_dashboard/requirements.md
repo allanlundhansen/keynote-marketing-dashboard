@@ -31,58 +31,143 @@ This phase delivers the web-based dashboard UI that visualizes marketing perform
 
 ### 1. Dashboard Home (Primary View)
 
-#### 1.1 Performance Summary Cards
+The Overview answers "Is my marketing working?" at a glance through a hierarchical layout with 5 sections.
 
-- [ ] Display key metrics in prominent cards:
-  - Total Cost (spend)
-  - Total Clicks
-  - Total Impressions
-  - Total Sessions (from GA4)
-  - Total Engaged Sessions
-  - Conversion Count (based on selected events)
-- [ ] Show percentage change vs previous period (configurable: MoM or YoY)
+#### 1.1 Primary KPIs (4 Large Cards)
+
+- [ ] Display 4 key metrics prominently:
+  - Total Cost (what we're spending)
+  - Conversions (what we're getting - based on selected events)
+  - Cost per Conversion (efficiency metric)
+  - Engagement Rate (Engaged Sessions / Sessions - funnel health)
+- [ ] Show percentage change vs comparison period
 - [ ] Color-code changes (green for improvement, red for decline)
+- [ ] These 4 metrics answer the core question directly
 
-#### 1.2 Date Range Selection
+#### 1.2 Funnel Visualization
 
-- [ ] Default view: Current month
-- [ ] Quick selectors: This Month, Last Month, Last 3 Months, Last 12 Months, YTD
+- [ ] Display horizontal funnel: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
+- [ ] Show absolute number at each stage
+- [ ] Show conversion rate between each stage (CTR, Click→Session, Session→Engaged, Engaged→Conversion)
+- [ ] Show rate change vs comparison period (▲/▼ indicators)
+- [ ] Visual width proportional to volume (funnel narrows)
+- [ ] Diagnostic value: identifies WHERE in funnel problems occur
+
+#### 1.3 Supporting Metrics (6 Smaller Cards)
+
+- [ ] Display context metrics in secondary prominence:
+  - Impressions
+  - Clicks
+  - CTR (Clicks / Impressions)
+  - Sessions
+  - Avg CPC (Cost / Clicks)
+  - Cost per Session
+- [ ] Show percentage change vs comparison period
+- [ ] Color-code changes
+
+#### 1.4 Trend Sparkline (with Metric Presets)
+
+- [x] Line chart showing trends over selected date range
+- [x] Metric preset selector with options:
+  - Cost & Clicks (default)
+  - Cost & Sessions
+  - Sessions & Engaged Sessions
+  - Clicks & Impressions
+- [x] Solid lines for current period
+- [x] When comparison mode enabled: overlay comparison period as dashed lines
+- [x] X-axis aligned by relative position so periods overlay correctly
+- [x] Tooltip shows all values (current + comparison) on hover
+- [x] Reveals trend pattern differences, not just point-in-time comparison
+
+> **Note:** Metric presets replace the need for a separate Trend Analysis View. See ADR-027.
+
+#### 1.5 Quick Insights (Keywords)
+
+- [ ] Lazy-load after main Overview renders (preserves <2s initial load)
+- [ ] Display "Top 5 Keywords by Cost" table with columns: Keyword, Cost, vs Prev, Clicks, Conversions
+- [ ] Display "Top 5 Keywords by Conversions" table with columns: Keyword, Conversions, vs Prev, Cost, CTR
+- [ ] "vs Prev" shows % change vs comparison period with color coding (▲ green, ▼ red)
+- [ ] When comparison mode is "none", show "—" in vs Prev column
+- [ ] Surfaces actionable keyword data without requiring drill-down
+
+#### 1.6 Date Range Selection
+
+- [ ] Default view: Last 12 months
 - [ ] Custom date range picker (by month, since data is monthly granularity)
-- [ ] Comparison toggle: Compare to same period last year
+- [ ] Comparison mode dropdown with options:
+  - None (no comparison)
+  - Previous Period (same length, immediately preceding)
+  - Same Period Last Year (YoY)
+  - Custom (user picks comparison date range)
+- [ ] Comparison data flows to all sections (KPIs, funnel, sparkline, keywords)
 
-#### 1.3 Filter Controls
+#### 1.7 Filter Controls
 
 - [ ] Filter by Campaign (multi-select)
 - [ ] Filter by Campaign Type (SEARCH, DISPLAY, VIDEO, PERFORMANCE_MAX)
 - [ ] Filter by Device (DESKTOP, MOBILE, TABLET)
 - [ ] Filters apply to all views and metrics
 - [ ] Clear all filters button
+- [ ] Filters accessible via sidebar drawer
 
-### 2. Trend Analysis View
+### 2. Trend Analysis ~~View~~ (Merged into Overview)
 
-#### 2.1 Time Series Charts
+> **Decision:** Trend analysis functionality has been merged into the Overview sparkline via metric presets, eliminating the need for a separate Trends view. See ADR-027.
 
-- [ ] Monthly trend chart for selected metrics
-- [ ] Ability to overlay multiple metrics (e.g., Cost and Sessions)
-- [ ] Visual comparison line for same period previous year (when enabled)
+#### 2.1 Time Series Charts - ✅ Merged into Overview Section 1.4
 
-#### 2.2 Metrics Available for Trending
+- [x] Monthly trend chart for selected metrics → Implemented as Overview sparkline with presets
+- [x] Ability to overlay multiple metrics → Metric preset combinations (e.g., Cost & Sessions)
+- [x] Visual comparison line for same period previous year → Dashed lines when comparison enabled
 
-- [ ] Cost, Clicks, Impressions, CTR, Avg CPC
-- [ ] Sessions, Engaged Sessions, Bounce Rate
-- [ ] Conversions (based on selected events)
-- [ ] Calculated: Cost per Session, Cost per Engaged Session, Cost per Conversion
+#### 2.2 Metrics Available for Trending - ✅ Available via Presets
+
+Available through preset selector:
+- [x] Cost & Clicks (default)
+- [x] Cost & Sessions
+- [x] Sessions & Engaged Sessions
+- [x] Clicks & Impressions
 
 ### 3. Campaign Analysis View
 
-#### 3.1 Campaign Performance Table
+> **Reorganized:** Drill-down views (Keywords, Search Terms, Landing Pages) are now part of Campaign Analysis as tabs within Campaign Detail View.
+
+#### 3.1 Campaign List
 
 - [ ] Sortable table with all campaigns
 - [ ] Columns: Campaign Name, Type, Cost, Clicks, Impressions, CTR, Sessions, Engaged Sessions, Conversions
-- [ ] Sparkline showing trend for each campaign
-- [ ] Click to drill down to campaign detail
+- [ ] Click row to navigate to Campaign Detail View
 
-#### 3.2 Campaign Comparison
+#### 3.2 Campaign Detail View
+
+- [ ] Route: `#/campaigns/:id`
+- [ ] Campaign summary metrics at top
+- [ ] Tab navigation: Keywords | Search Terms | Landing Pages
+- [ ] Back button to return to campaign list
+
+#### 3.3 Keywords Tab (within Campaign Detail)
+
+- [ ] Shows keyword-level performance for selected campaign/date range
+- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC
+- [ ] Sortable by any column
+- [ ] Expandable rows showing search terms per keyword
+- [ ] Acceptable load time: 2-3 seconds
+
+#### 3.4 Search Terms Tab (within Campaign Detail)
+
+- [ ] Shows actual user queries for selected campaign/date range
+- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
+- [ ] Useful for negative keyword identification
+- [ ] Acceptable load time: 2-3 seconds
+
+#### 3.5 Landing Pages Tab (within Campaign Detail)
+
+- [ ] Shows landing page performance for selected campaign/date range
+- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Engagement Rate
+- [ ] Helps diagnose page vs targeting issues
+- [ ] Acceptable load time: 2-3 seconds
+
+#### 3.6 Campaign Comparison (Deferred)
 
 - [ ] Side-by-side comparison of selected campaigns
 - [ ] Percentage of total spend/clicks/conversions for each campaign
@@ -122,29 +207,9 @@ This phase delivers the web-based dashboard UI that visualizes marketing perform
 - [ ] All conversion-related metrics recalculate when selection changes
 - [ ] Affected metrics: Conversion Count, Cost per Conversion, Conversion Rate
 
-### 8. Drill-Down Views
+### ~~8. Drill-Down Views~~ (Consolidated into Section 3)
 
-#### 8.1 Keyword Detail (from Raw_Ads_Keywords)
-
-- [ ] Accessible from campaign drill-down
-- [ ] Shows keyword-level performance for selected campaign/date range
-- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC, Quality Score
-- [ ] Sortable by any column
-- [ ] Acceptable load time: 2-3 seconds
-
-#### 8.2 Search Term Detail (from Raw_Ads_SearchTerms)
-
-- [ ] Shows actual user queries for selected campaign/date range
-- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
-- [ ] Useful for negative keyword identification
-- [ ] Acceptable load time: 2-3 seconds
-
-#### 8.3 Landing Page Detail (from Raw_GA4_Pages)
-
-- [ ] Shows landing page performance for selected campaign/date range
-- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Bounce Rate
-- [ ] Helps diagnose "page problem" vs "targeting problem"
-- [ ] Acceptable load time: 2-3 seconds
+> **Moved:** Keyword, Search Term, and Landing Page drill-down views have been consolidated into Section 3 (Campaign Analysis) as tabs within the Campaign Detail View. This reflects the actual user flow: Campaign List → Campaign Detail → Keywords/Search Terms/Landing Pages tabs.
 
 ### 9. UI States
 

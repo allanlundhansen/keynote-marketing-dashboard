@@ -74,66 +74,135 @@
 
 > **Note:** Upgraded to PrimeVue 4 with Aura theme. Comparison mode supports flexible date range comparison including custom ranges.
 
-## 5. Dashboard Home View
+## 5. Dashboard Home View (Overview)
 
-### 5.1 Summary Cards Row
-- [ ] Display Total Cost card
-- [ ] Display Total Clicks card
-- [ ] Display Total Impressions card
-- [ ] Display Total Sessions card
-- [ ] Display Total Engaged Sessions card
-- [ ] Display Conversion Count card (based on selected events)
-- [ ] Calculate and show % change vs previous period
-- [ ] Color-code changes (green = improvement, red = decline)
+### 5.1 Primary KPIs (4 Large Cards)
+- [x] Display Total Cost card (with comparison %)
+- [x] Display Clicks card (with comparison %) - replaced Conversions as primary KPI
+- [x] Display Avg CPC card (with comparison %) - replaced Cost per Conversion
+- [x] Display Engagement Rate card (EngagedSessions / Sessions, with comparison %)
+- [x] Style these 4 cards prominently as the primary metrics
 
-### 5.2 Quick Stats
-- [ ] Calculate and display CTR (Clicks / Impressions)
-- [ ] Calculate and display Avg CPC (Cost / Clicks)
-- [ ] Calculate and display Cost per Session
-- [ ] Calculate and display Cost per Conversion
+> **Rationale:** These 4 metrics answer "Is my marketing working?" — Cost + Clicks = effort vs reach, Avg CPC = efficiency, Engagement Rate = funnel health. Conversions remain in the funnel but not as primary KPI per user preference.
 
-### 5.3 Data Loading
-- [ ] Call `getDashboardData()` on mount
-- [ ] Show loading skeleton while fetching
-- [ ] Handle errors gracefully
-- [ ] Apply filters to loaded data client-side
+### 5.2 Funnel Visualization
+- [x] Create horizontal funnel component showing: Impressions → Clicks → Sessions → Engaged Sessions → Conversions
+- [x] Display absolute number at each stage
+- [x] Display conversion rate between each stage (CTR, Click→Session rate, Session→Engaged rate, Engaged→Conversion rate)
+- [x] Visual width proportional to volume (funnel narrows left to right)
+- [x] Color indicators vs comparison period (green arrow if improved, red if declined)
+- [x] Responsive design (stacks vertically on mobile)
 
-## 6. Trend Analysis View
+> **Rationale:** The funnel visualization is the core value proposition of this dashboard. It answers "WHERE in my funnel am I losing people?" — the diagnostic tool the project exists to provide.
 
-### 6.1 Time Series Chart
-- [ ] Create line chart component using Chart.js
-- [ ] Display monthly data points for selected date range
-- [ ] Support metric selection (Cost, Clicks, Sessions, Conversions, etc.)
-- [ ] Allow overlaying 2 metrics on same chart (dual Y-axis)
-- [ ] Add comparison line for same period previous year (when enabled)
+### 5.3 Supporting Metrics (6 Smaller Cards)
+- [x] Display Impressions card
+- [x] Display CTR card (Clicks / Impressions)
+- [x] Display Sessions card
+- [x] Display Engaged Sessions card
+- [x] Display Cost per Session card
+- [x] Display Cost per Engaged Session card
+- [x] Style these 6 cards smaller/secondary to primary KPIs
 
-### 6.2 Metric Selector
-- [ ] Create metric dropdown for primary metric
-- [ ] Create metric dropdown for secondary metric (optional)
-- [ ] Available metrics: Cost, Clicks, Impressions, CTR, Avg CPC, Sessions, Engaged Sessions, Conversions, Cost/Session, Cost/Conversion
+### 5.4 Trend Sparkline
+- [x] Create line chart showing Cost and Clicks over selected date range
+- [x] Use Chart.js for rendering
+- [x] Solid lines for current period (blue = Cost, green = Clicks)
+- [x] When comparison mode enabled, overlay comparison period as dashed lines (same colors)
+- [x] X-axis aligned by relative position (month 1, 2, 3... so periods overlay correctly)
+- [x] Tooltip on hover shows all values (current + comparison if enabled)
+- [x] Legend showing: Cost (Current), Cost (Comparison), Clicks (Current), Clicks (Comparison)
+- [x] Responsive sizing
+- [x] When comparison mode is "none", only show solid lines (2 lines total)
 
-### 6.3 Chart Interactions
-- [ ] Hover tooltips showing exact values
-- [ ] Responsive chart sizing
-- [ ] Legend toggle to show/hide series
+> **Rationale:** Addresses the goal "Understand if campaigns are underperforming vs. external factors (seasonality, economy)". Overlaying comparison period reveals trend pattern differences - not just point-in-time comparison but whether current period follows same seasonal curve as comparison period.
+
+### 5.5 Quick Insights (Lazy-Loaded Keywords)
+- [x] Create backend function `getKeywordsSummary(dateFrom, dateTo, compareDateFrom, compareDateTo, campaignIds, limit)` that returns top keywords with current and comparison period data (independently ranked)
+- [x] Pre-aggregate keywords in Summary_Keywords sheet with embedded search terms (top 15 per keyword)
+- [x] Lazy-load this section AFTER main Overview renders (async, non-blocking)
+- [x] Display "Top 5 Keywords by Cost" mini-table using PrimeVue DataTable with expandable rows for search terms
+- [x] Display "Top 5 Keywords by Clicks" mini-table using PrimeVue DataTable with expandable rows for search terms
+- [x] When comparison enabled: show 4 tables (Current Cost vs Comparison Cost, Current Clicks vs Comparison Clicks) - each period has its own independently ranked top 5
+- [x] Sort tables by current period value (not comparison)
+- [x] Show loading spinner while keywords load
+- [x] Handle empty state if no keyword data available
+
+> **Rationale:** Keywords are the actionable lever for Google Ads optimization. Showing independent top 5 for each period allows comparison of strategy shifts over time (different keywords may be top performers in different periods).
+
+### 5.6 Data Loading
+- [x] Call `getDashboardData()` on mount (Summary sheets - fast)
+- [x] Show loading skeleton while fetching
+- [x] Handle errors gracefully
+- [x] Apply filters to loaded data client-side
+- [x] After main data loads, trigger lazy-load of Quick Insights (Keywords)
+
+## 6. Trend Analysis ~~View~~ (Merged into Overview)
+
+> **Decision:** Trend analysis merged into Overview sparkline with metric presets. See ADR-027.
+
+### 6.1 Metric Preset Selector (in Overview)
+- [x] Add SelectButton component above trend sparkline
+- [x] Preset options:
+  - Cost & Clicks (default)
+  - Cost & Sessions
+  - Sessions & Engaged
+  - Clicks & Impressions
+- [x] Switching preset updates chart data
+- [x] Comparison overlay works with all presets
+
+### 6.2 Remove Dedicated Trends View
+- [x] Remove `/trends` route from index.html
+- [x] Remove "Trends" from sidebar navigation
+- [x] TrendsView.html can be deleted (was placeholder only)
+
+### 6.3 Chart Interactions (already in Overview)
+- [x] Hover tooltips showing exact values
+- [x] Responsive chart sizing
+- [x] Legend showing current + comparison series
 
 ## 7. Campaign Analysis View
 
-### 7.1 Campaign Table
+> **Reorganized:** Sections 7 and 12 have been consolidated. Campaign drill-down views (Keywords, Search Terms, Landing Pages) are now part of the Campaign Detail View, not a separate section.
+
+### 7.1 Campaign List View
 - [ ] Create sortable DataTable with PrimeVue
 - [ ] Columns: Campaign Name, Type, Cost, Clicks, Impressions, CTR, Sessions, Engaged Sessions, Conversions
 - [ ] Enable sorting by any column
 - [ ] Add pagination (20 rows per page)
-- [ ] Add sparkline for each campaign (mini trend chart)
+- [ ] Click row to navigate to Campaign Detail View
 
-### 7.2 Campaign Comparison
+### 7.2 Campaign Detail View
+- [ ] Route: `#/campaigns/:id`
+- [ ] Display campaign summary metrics at top
+- [ ] Tab navigation: Keywords | Search Terms | Landing Pages
+- [ ] Back button to return to campaign list
+
+### 7.3 Keywords Tab (within Campaign Detail)
+- [ ] Call `getKeywordDetail(campaignId, dateFrom, dateTo)` backend function
+- [ ] Display sortable table with keyword data
+- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC
+- [ ] Show loading state during fetch
+- [ ] Expandable rows showing search terms (from Summary_Keywords)
+
+### 7.4 Search Terms Tab (within Campaign Detail)
+- [ ] Call `getSearchTermDetail(campaignId, dateFrom, dateTo)` backend function
+- [ ] Display sortable table with search term data
+- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
+- [ ] Useful for negative keyword identification
+
+### 7.5 Landing Pages Tab (within Campaign Detail)
+- [ ] Call `getLandingPageDetail(campaign, dateFrom, dateTo)` backend function
+- [ ] Display sortable table with landing page data
+- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Engagement Rate
+- [ ] Helps diagnose page vs targeting issues
+
+### 7.6 Campaign Comparison (Deferred)
 - [ ] Allow selecting 2-3 campaigns for side-by-side comparison
 - [ ] Show percentage of total for each metric
 - [ ] Visual bar comparison
 
-### 7.3 Campaign Drill-Down
-- [ ] Click campaign row to navigate to detail view
-- [ ] Campaign detail view shows keywords and search terms tabs
+> **Note:** Campaign Comparison (7.6) is lower priority. Implement list + detail views first.
 
 ## 8. Device Analysis View
 
@@ -189,30 +258,9 @@
 - [ ] Recalculate "Cost per Conversion" when selection changes
 - [ ] Update all views that display conversion metrics
 
-## 12. Drill-Down Views
+## ~~12. Drill-Down Views~~ (Consolidated into Section 7)
 
-### 12.1 Keyword Detail View
-- [ ] Route: `#/keywords?campaign=X&dateFrom=Y&dateTo=Z`
-- [ ] Call `getKeywordDetail()` backend function
-- [ ] Display sortable table with keyword data
-- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC, Quality Score
-- [ ] Show loading state during fetch
-- [ ] Back button to return to campaign view
-
-### 12.2 Search Term Detail View
-- [ ] Route: `#/search-terms?campaign=X&dateFrom=Y&dateTo=Z`
-- [ ] Call `getSearchTermDetail()` backend function
-- [ ] Display sortable table with search term data
-- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
-- [ ] Useful for negative keyword identification
-- [ ] Back button to return to campaign view
-
-### 12.3 Landing Page Detail View
-- [ ] Route: `#/landing-pages?campaign=X&dateFrom=Y&dateTo=Z`
-- [ ] Call `getLandingPageDetail()` backend function
-- [ ] Display sortable table with landing page data
-- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Bounce Rate
-- [ ] Back button to return to campaign view
+> **Moved:** Keyword, Search Term, and Landing Page drill-down views have been consolidated into Section 7 (Campaign Analysis) as tabs within the Campaign Detail View. This reflects the actual user flow: Campaigns → Campaign Detail → Keywords/Search Terms/Landing Pages.
 
 ## 13. UI States
 

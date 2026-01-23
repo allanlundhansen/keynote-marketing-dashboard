@@ -35,6 +35,7 @@ const Config = {
     SUMMARY_MONTHLY: 'Summary_Monthly',
     SUMMARY_EVENTS: 'Summary_Events',
     SUMMARY_CAMPAIGNS: 'Summary_Campaigns',
+    SUMMARY_KEYWORDS: 'Summary_Keywords',
     SYSTEM_LOGS: 'System_Logs'
   }
 };

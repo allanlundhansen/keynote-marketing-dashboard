@@ -221,13 +221,25 @@ const storeActions = {
 // Computed Helpers (for use in components)
 // ============================================================
 
+// Helper to normalize YearMonth (handles both "YYYY-MM" and ISO date strings)
+// Uses UTC to avoid timezone issues with end-of-month dates
+function normalizeYearMonth(ym) {
+  if (!ym) return null;
+  // If it's already YYYY-MM format
+  if (typeof ym === 'string' && /^\d{4}-\d{2}$/.test(ym)) return ym;
+  // If it's an ISO date string or Date object, use UTC to avoid timezone rollover
+  const d = new Date(ym);
+  if (isNaN(d.getTime())) return null;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
 const storeComputed = {
   // Filter monthly data by current filters and date range
   filteredMonthly() {
     return store.data.monthly.filter(row => {
-      // Date range filter
-      if (row.YearMonth < store.dateRange.from) return false;
-      if (row.YearMonth > store.dateRange.to) return false;
+      // Date range filter - normalize YearMonth to handle ISO date strings
+      const ym = normalizeYearMonth(row.YearMonth);
+      if (!ym || ym < store.dateRange.from || ym > store.dateRange.to) return false;
 
       // Campaign filter
       if (store.filters.campaigns.length > 0) {
@@ -251,9 +263,9 @@ const storeComputed = {
   // Filter events data by current filters and date range
   filteredEvents() {
     return store.data.events.filter(row => {
-      // Date range filter
-      if (row.YearMonth < store.dateRange.from) return false;
-      if (row.YearMonth > store.dateRange.to) return false;
+      // Date range filter - normalize YearMonth to handle ISO date strings
+      const ym = normalizeYearMonth(row.YearMonth);
+      if (!ym || ym < store.dateRange.from || ym > store.dateRange.to) return false;
 
       // Campaign filter
       if (store.filters.campaigns.length > 0) {

@@ -665,3 +665,66 @@ Comparison range calculation:
 **Negative:**
 - More complex UI than simple toggle
 - Custom mode requires additional date pickers
+
+---
+
+## ADR-027: Merge Trend Analysis into Overview (No Separate Trends View)
+
+- **Status**: Accepted
+
+### Context
+
+The original spec included a dedicated Trends View (`#/trends`) with:
+- User-selectable metric dropdowns (primary + secondary)
+- Dual Y-axis chart support
+- Full customization of which metrics to compare
+
+However, the Overview already has a trend sparkline showing Cost & Clicks with comparison overlay. The question arose: does a separate Trends view add value, or is it redundant?
+
+### Decision
+
+**Merge trend analysis into the Overview** via metric presets instead of building a separate Trends view.
+
+Implementation:
+- Add a `SelectButton` above the Overview sparkline
+- Offer 4 preset metric combinations:
+  1. Cost & Clicks (default)
+  2. Cost & Sessions
+  3. Sessions & Engaged Sessions
+  4. Clicks & Impressions
+- Remove the `/trends` route entirely
+- Remove "Trends" from sidebar navigation
+
+### Rationale
+
+1. **Redundancy**: The Overview sparkline already provides trend visualization. A separate page for "more trend options" adds navigation friction without proportional value.
+
+2. **"Pick any metric" is over-engineered**: In practice, dashboard users rarely use fully flexible metric selectors. They look at defaults, get their answer, and leave. Preset combinations cover 95% of use cases.
+
+3. **Single-page principle**: Everything a user needs for quick analysis should be on Overview. Requiring navigation to see "Sessions trend" instead of "Cost trend" is poor UX.
+
+4. **Development efficiency**: Building metric dropdowns, dual Y-axis logic, and maintaining parity with comparison modes requires effort for questionable ROI.
+
+5. **The funnel already shows all metrics**: The Overview funnel visualization displays all key metrics (Impressions, Clicks, Sessions, Engaged, Conversions) with rates. A trend chart is supplementary context, not primary analysis.
+
+### Alternatives Considered
+
+| Alternative | Why Rejected |
+|-------------|--------------|
+| Build full Trends view as spec'd | Over-engineered for single-user dashboard; redundant with Overview |
+| Skip trend customization entirely | Loses flexibility for users who want to see Sessions trends |
+| Fully customizable dropdowns on Overview | Too complex; preset combinations are simpler and sufficient |
+
+### Consequences
+
+**Positive:**
+- Simpler navigation (one fewer route)
+- All trend analysis on single page
+- Lower development effort
+- Presets guide users to useful combinations
+- Comparison overlay works automatically with all presets
+
+**Negative:**
+- Cannot compare arbitrary metrics (e.g., CTR vs Avg CPC)
+- Limited to 4 preset combinations
+- Power users wanting full flexibility must use raw Sheets data

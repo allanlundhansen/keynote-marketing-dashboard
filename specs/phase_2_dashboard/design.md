@@ -86,7 +86,6 @@ The dashboard is a Vue 3 single-page application (SPA) served by Google Apps Scr
 const routes = [
   { path: '/', redirect: '/overview' },
   { path: '/overview', component: OverviewView, name: 'overview' },
-  { path: '/trends', component: TrendsView, name: 'trends' },
   { path: '/campaigns', component: CampaignsView, name: 'campaigns' },
   { path: '/campaigns/:id', component: CampaignDetailView, name: 'campaign-detail' },
   { path: '/devices', component: DevicesView, name: 'devices' },
@@ -108,8 +107,7 @@ const router = VueRouter.createRouter({
 
 | URL | View | Description |
 |-----|------|-------------|
-| `#/overview` | Overview | Dashboard home with summary cards |
-| `#/trends` | Trends | Time series charts |
+| `#/overview` | Overview | Dashboard home with summary cards, funnel, trend chart |
 | `#/campaigns` | Campaigns | Campaign list table |
 | `#/campaigns/123` | Campaign Detail | Single campaign with drill-down |
 | `#/devices` | Devices | Device breakdown |
@@ -122,7 +120,7 @@ const router = VueRouter.createRouter({
 Filters can be persisted in URL for bookmarking/sharing:
 
 ```
-#/trends?dateFrom=2025-01&dateTo=2026-01&campaigns=123,456&devices=DESKTOP,MOBILE
+#/overview?from=2025-01&to=2026-01&campaigns=123,456&devices=DESKTOP,MOBILE
 ```
 
 ## Page Layout
@@ -135,7 +133,7 @@ Filters can be persisted in URL for bookmarking/sharing:
 │  Marketing Dashboard                                                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ NAVIGATION TABS                                                             │
-│ [Overview] [Trends] [Campaigns] [Devices] [Types] [Countries] [Conversions] │
+│ [Overview] [Campaigns] [Devices] [Types] [Countries] [Conversions]          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  [⚙ Filters]  ← Opens sidebar drawer with filters & date range             │
@@ -181,9 +179,11 @@ The Overview is structured in 5 sections, ordered by importance:
 │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ SECTION 4: TREND SPARKLINE (with comparison overlay when enabled)           │
+│ SECTION 4: TREND SPARKLINE (with metric presets and comparison overlay)     │
 │                                                                             │
-│  Cost & Conversions Over Time                                               │
+│  [Cost & Clicks ▼] ← Metric preset selector                                 │
+│                                                                             │
+│  Cost & Clicks Over Time                                                    │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │     $                                                    Conversions │   │
 │  │  5k ┤  ╭──╮         ← solid: current period                   │ 20  │   │
@@ -235,7 +235,7 @@ The Overview is structured in 5 sections, ordered by importance:
 
 3. **Supporting Metrics (Section 3):** Context metrics that don't answer the core question but provide useful detail.
 
-4. **Trend Sparkline (Section 4):** Shows Cost + Conversions trend over time. When comparison mode is enabled, overlays the comparison period as dashed lines. This reveals trend PATTERN differences - not just point-in-time comparison but whether current period follows the same seasonal curve as comparison period. Divergences become immediately visible: "We spiked in March last year but not this year."
+4. **Trend Sparkline (Section 4):** Shows trends over time with a metric preset selector. Users can choose from preset combinations (Cost & Clicks, Cost & Sessions, Sessions & Engaged, Clicks & Impressions) without needing a separate Trends page. When comparison mode is enabled, overlays the comparison period as dashed lines. This reveals trend PATTERN differences - not just point-in-time comparison but whether current period follows the same seasonal curve as comparison period. Divergences become immediately visible: "We spiked in March last year but not this year."
 
 5. **Quick Insights (Section 5):** Lazy-loaded to preserve <2s initial load. Surfaces actionable keyword data with comparison context via "vs Prev" column. This makes insights actionable: "Keyword X cost up 24% - investigate" or "Keyword Y conversions up 40% - allocate more budget."
 
@@ -305,9 +305,8 @@ App (root)
 │
 └── <router-view> (renders current route's component)
     ├── OverviewView
-    ├── TrendsView
-    │   ├── MetricSelector (PrimeVue Dropdown)
-    │   └── TrendChart (PrimeVue Chart)
+    │   ├── MetricPresetSelector (PrimeVue SelectButton)
+    │   └── TrendChart (Chart.js)
     ├── CampaignsView
     │   └── CampaignTable (PrimeVue DataTable)
     ├── CampaignDetailView

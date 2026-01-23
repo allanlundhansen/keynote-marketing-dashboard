@@ -137,24 +137,29 @@
 - [x] Apply filters to loaded data client-side
 - [x] After main data loads, trigger lazy-load of Quick Insights (Keywords)
 
-## 6. Trend Analysis View
+## 6. Trend Analysis ~~View~~ (Merged into Overview)
 
-### 6.1 Time Series Chart
-- [ ] Create line chart component using Chart.js
-- [ ] Display monthly data points for selected date range
-- [ ] Support metric selection (Cost, Clicks, Sessions, Conversions, etc.)
-- [ ] Allow overlaying 2 metrics on same chart (dual Y-axis)
-- [ ] Add comparison line for same period previous year (when enabled)
+> **Decision:** Trend analysis merged into Overview sparkline with metric presets. See ADR-027.
 
-### 6.2 Metric Selector
-- [ ] Create metric dropdown for primary metric
-- [ ] Create metric dropdown for secondary metric (optional)
-- [ ] Available metrics: Cost, Clicks, Impressions, CTR, Avg CPC, Sessions, Engaged Sessions, Conversions, Cost/Session, Cost/Conversion
+### 6.1 Metric Preset Selector (in Overview)
+- [x] Add SelectButton component above trend sparkline
+- [x] Preset options:
+  - Cost & Clicks (default)
+  - Cost & Sessions
+  - Sessions & Engaged
+  - Clicks & Impressions
+- [x] Switching preset updates chart data
+- [x] Comparison overlay works with all presets
 
-### 6.3 Chart Interactions
-- [ ] Hover tooltips showing exact values
-- [ ] Responsive chart sizing
-- [ ] Legend toggle to show/hide series
+### 6.2 Remove Dedicated Trends View
+- [x] Remove `/trends` route from index.html
+- [x] Remove "Trends" from sidebar navigation
+- [x] TrendsView.html can be deleted (was placeholder only)
+
+### 6.3 Chart Interactions (already in Overview)
+- [x] Hover tooltips showing exact values
+- [x] Responsive chart sizing
+- [x] Legend showing current + comparison series
 
 ## 7. Campaign Analysis View
 

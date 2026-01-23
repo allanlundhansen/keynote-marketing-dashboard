@@ -5,6 +5,14 @@ const OverviewView = {
   data() {
     return {
       trendChartInstance: null,
+      // Metric preset for trend chart
+      selectedMetricPreset: 'cost_clicks',
+      metricPresetOptions: [
+        { label: 'Cost & Clicks', value: 'cost_clicks' },
+        { label: 'Cost & Sessions', value: 'cost_sessions' },
+        { label: 'Sessions & Engaged', value: 'sessions_engaged' },
+        { label: 'Clicks & Impressions', value: 'clicks_impressions' }
+      ],
       // Quick Insights state
       keywordsLoading: false,
       keywordsError: null,
@@ -208,9 +216,20 @@ const OverviewView = {
           </div>
         </section>
 
-        <!-- Section 4: Trend Sparkline -->
+        <!-- Section 4: Trend Sparkline with Metric Presets -->
         <section class="overview-section">
-          <h2 class="section-title">Cost & Clicks Trend</h2>
+          <div class="trend-header">
+            <h2 class="section-title">{{ trendChartTitle }}</h2>
+            <SelectButton
+              v-model="selectedMetricPreset"
+              :options="metricPresetOptions"
+              optionLabel="label"
+              optionValue="value"
+              :allowEmpty="false"
+              size="small"
+              class="metric-preset-selector"
+            />
+          </div>
           <div class="trend-chart-container">
             <canvas ref="trendChart" id="trendChart"></canvas>
           </div>
@@ -750,18 +769,53 @@ const OverviewView = {
       return 'Comparison Period';
     },
 
-    // Trend chart data - monthly Cost and Clicks
+    // Trend chart title based on selected preset
+    trendChartTitle() {
+      const titles = {
+        'cost_clicks': 'Cost & Clicks Trend',
+        'cost_sessions': 'Cost & Sessions Trend',
+        'sessions_engaged': 'Sessions & Engaged Trend',
+        'clicks_impressions': 'Clicks & Impressions Trend'
+      };
+      return titles[this.selectedMetricPreset] || 'Trend';
+    },
+
+    // Metric configuration for each preset
+    metricConfig() {
+      const configs = {
+        'cost_clicks': {
+          primary: { key: 'Cost', label: 'Cost', color: '#2563EB', format: 'currency' },
+          secondary: { key: 'Clicks', label: 'Clicks', color: '#10B981', format: 'number' }
+        },
+        'cost_sessions': {
+          primary: { key: 'Cost', label: 'Cost', color: '#2563EB', format: 'currency' },
+          secondary: { key: 'Sessions', label: 'Sessions', color: '#8B5CF6', format: 'number' }
+        },
+        'sessions_engaged': {
+          primary: { key: 'Sessions', label: 'Sessions', color: '#8B5CF6', format: 'number' },
+          secondary: { key: 'EngagedSessions', label: 'Engaged', color: '#14B8A6', format: 'number' }
+        },
+        'clicks_impressions': {
+          primary: { key: 'Clicks', label: 'Clicks', color: '#10B981', format: 'number' },
+          secondary: { key: 'Impressions', label: 'Impressions', color: '#F59E0B', format: 'number' }
+        }
+      };
+      return configs[this.selectedMetricPreset] || configs['cost_clicks'];
+    },
+
+    // Trend chart data - based on selected metric preset
     trendChartData() {
       const monthly = this.storeComputed.filteredMonthly();
+      const config = this.metricConfig;
 
       // Group by YearMonth
       const byMonth = {};
       monthly.forEach(row => {
         if (!byMonth[row.YearMonth]) {
-          byMonth[row.YearMonth] = { cost: 0, clicks: 0 };
+          byMonth[row.YearMonth] = { primary: 0, secondary: 0 };
         }
-        byMonth[row.YearMonth].cost += row.Cost || 0;
-        byMonth[row.YearMonth].clicks += row.Clicks || 0;
+        byMonth[row.YearMonth].primary += row[config.primary.key] || 0;
+        byMonth[row.YearMonth].secondary += row[config.secondary.key] || 0;
       });
 
       // Sort by month and extract arrays
@@ -769,8 +823,8 @@ const OverviewView = {
       return {
         labels: sortedMonths.map((m, i) => `M${i + 1}`),
         actualLabels: sortedMonths,
-        cost: sortedMonths.map(m => byMonth[m].cost),
-        clicks: sortedMonths.map(m => byMonth[m].clicks)
+        primary: sortedMonths.map(m => byMonth[m].primary),
+        secondary: sortedMonths.map(m => byMonth[m].secondary)
       };
     },
 
@@ -816,37 +870,35 @@ const OverviewView = {
         return true;
       });
 
+      const config = this.metricConfig;
       const byMonth = {};
       monthly.forEach(row => {
         const ym = this.normalizeYearMonth(row.YearMonth);
         if (!byMonth[ym]) {
-          byMonth[ym] = { cost: 0, clicks: 0 };
+          byMonth[ym] = { primary: 0, secondary: 0 };
         }
-        byMonth[ym].cost += row.Cost || 0;
-        byMonth[ym].clicks += row.Clicks || 0;
+        byMonth[ym].primary += row[config.primary.key] || 0;
+        byMonth[ym].secondary += row[config.secondary.key] || 0;
       });
 
       // Build aligned arrays: for each current month, get the corresponding comparison month's data
       const compLabels = [];
-      const compCost = [];
-      const compClicks = [];
-
-      console.log('comparisonTrendChartData - byMonth keys:', Object.keys(byMonth));
+      const compPrimary = [];
+      const compSecondary = [];
 
       currentData.actualLabels.forEach(currentYM => {
         const normalizedCurrentYM = this.normalizeYearMonth(currentYM);
         const compYM = getComparisonMonth(normalizedCurrentYM);
         compLabels.push(compYM);
-        const data = byMonth[compYM] || { cost: 0, clicks: 0 };
-        console.log(`Lookup: ${normalizedCurrentYM} -> ${compYM}, found:`, data);
-        compCost.push(data.cost);
-        compClicks.push(data.clicks);
+        const data = byMonth[compYM] || { primary: 0, secondary: 0 };
+        compPrimary.push(data.primary);
+        compSecondary.push(data.secondary);
       });
 
       return {
         labels: compLabels,
-        cost: compCost,
-        clicks: compClicks
+        primary: compPrimary,
+        secondary: compSecondary
       };
     }
   },
@@ -973,23 +1025,24 @@ const OverviewView = {
 
       const currentData = this.trendChartData;
       const comparisonData = this.comparisonTrendChartData;
-
-      console.log('Chart - currentData labels:', currentData.actualLabels);
-      console.log('Chart - currentData cost:', currentData.cost);
-      console.log('Chart - comparisonData labels:', comparisonData?.labels);
-      console.log('Chart - comparisonData cost:', comparisonData?.cost);
-      console.log('Chart - comparison range:', this.storeComputed.comparisonDateRange());
+      const config = this.metricConfig;
 
       // Determine comparison label based on mode
       const comparisonLabel = this.store.dateRange.comparisonMode === 'lastYear' ? 'Last Year' : 'Previous';
       const hasComparison = !!comparisonData;
 
+      // Format value based on metric type
+      const formatValue = (value, format) => {
+        if (format === 'currency') return '$' + value.toLocaleString();
+        return value.toLocaleString();
+      };
+
       const datasets = [
         {
-          label: hasComparison ? 'Cost (Current)' : 'Cost',
-          data: currentData.cost,
-          borderColor: '#2563EB',
-          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          label: hasComparison ? `${config.primary.label} (Current)` : config.primary.label,
+          data: currentData.primary,
+          borderColor: config.primary.color,
+          backgroundColor: config.primary.color + '1A', // 10% opacity
           borderWidth: 2,
           tension: 0.3,
           yAxisID: 'y',
@@ -997,10 +1050,10 @@ const OverviewView = {
           pointHoverRadius: 5
         },
         {
-          label: hasComparison ? 'Clicks (Current)' : 'Clicks',
-          data: currentData.clicks,
-          borderColor: '#10B981',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          label: hasComparison ? `${config.secondary.label} (Current)` : config.secondary.label,
+          data: currentData.secondary,
+          borderColor: config.secondary.color,
+          backgroundColor: config.secondary.color + '1A', // 10% opacity
           borderWidth: 2,
           tension: 0.3,
           yAxisID: 'y1',
@@ -1012,9 +1065,9 @@ const OverviewView = {
       // Add comparison datasets if comparison mode is enabled
       if (comparisonData) {
         datasets.push({
-          label: `Cost (${comparisonLabel})`,
-          data: comparisonData.cost,
-          borderColor: '#2563EB',
+          label: `${config.primary.label} (${comparisonLabel})`,
+          data: comparisonData.primary,
+          borderColor: config.primary.color,
           backgroundColor: 'transparent',
           borderWidth: 2,
           borderDash: [5, 5],
@@ -1023,13 +1076,13 @@ const OverviewView = {
           pointRadius: 3,
           pointHoverRadius: 5,
           pointStyle: 'rectRot',
-          pointBorderColor: '#2563EB',
+          pointBorderColor: config.primary.color,
           pointBackgroundColor: 'transparent'
         });
         datasets.push({
-          label: `Clicks (${comparisonLabel})`,
-          data: comparisonData.clicks,
-          borderColor: '#10B981',
+          label: `${config.secondary.label} (${comparisonLabel})`,
+          data: comparisonData.secondary,
+          borderColor: config.secondary.color,
           backgroundColor: 'transparent',
           borderWidth: 2,
           borderDash: [5, 5],
@@ -1038,7 +1091,7 @@ const OverviewView = {
           pointRadius: 3,
           pointHoverRadius: 5,
           pointStyle: 'rectRot',
-          pointBorderColor: '#10B981',
+          pointBorderColor: config.secondary.color,
           pointBackgroundColor: 'transparent'
         });
       }
@@ -1088,10 +1141,10 @@ const OverviewView = {
                 label: (context) => {
                   const label = context.dataset.label;
                   const value = context.parsed.y;
-                  if (label.includes('Cost')) {
-                    return `${label}: $${value.toLocaleString()}`;
-                  }
-                  return `${label}: ${value.toLocaleString()}`;
+                  // Check if this is a primary or secondary metric by label
+                  const isPrimary = label.includes(config.primary.label);
+                  const format = isPrimary ? config.primary.format : config.secondary.format;
+                  return `${label}: ${formatValue(value, format)}`;
                 }
               }
             }
@@ -1108,10 +1161,10 @@ const OverviewView = {
               position: 'left',
               title: {
                 display: true,
-                text: 'Cost ($)'
+                text: config.primary.format === 'currency' ? `${config.primary.label} ($)` : config.primary.label
               },
               ticks: {
-                callback: (value) => '$' + value.toLocaleString()
+                callback: (value) => config.primary.format === 'currency' ? '$' + value.toLocaleString() : value.toLocaleString()
               }
             },
             y1: {
@@ -1120,10 +1173,13 @@ const OverviewView = {
               position: 'right',
               title: {
                 display: true,
-                text: 'Clicks'
+                text: config.secondary.label
               },
               grid: {
                 drawOnChartArea: false
+              },
+              ticks: {
+                callback: (value) => config.secondary.format === 'currency' ? '$' + value.toLocaleString() : value.toLocaleString()
               }
             }
           }
@@ -1380,6 +1436,23 @@ const OverviewView = {
 }
 
 /* Trend Chart */
+.trend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.trend-header .section-title {
+  margin: 0;
+}
+
+.metric-preset-selector {
+  flex-shrink: 0;
+}
+
 .trend-chart-container {
   background: var(--color-card);
   border: 1px solid var(--color-border);

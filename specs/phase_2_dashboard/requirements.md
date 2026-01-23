@@ -65,14 +65,21 @@ The Overview answers "Is my marketing working?" at a glance through a hierarchic
 - [ ] Show percentage change vs comparison period
 - [ ] Color-code changes
 
-#### 1.4 Trend Sparkline
+#### 1.4 Trend Sparkline (with Metric Presets)
 
-- [ ] Line chart showing Cost and Conversions over selected date range
-- [ ] Solid lines for current period (blue = Cost, green = Conversions)
-- [ ] When comparison mode enabled: overlay comparison period as dashed lines
-- [ ] X-axis aligned by relative position so periods overlay correctly
-- [ ] Tooltip shows all values (current + comparison) on hover
-- [ ] Reveals trend pattern differences, not just point-in-time comparison
+- [x] Line chart showing trends over selected date range
+- [x] Metric preset selector with options:
+  - Cost & Clicks (default)
+  - Cost & Sessions
+  - Sessions & Engaged Sessions
+  - Clicks & Impressions
+- [x] Solid lines for current period
+- [x] When comparison mode enabled: overlay comparison period as dashed lines
+- [x] X-axis aligned by relative position so periods overlay correctly
+- [x] Tooltip shows all values (current + comparison) on hover
+- [x] Reveals trend pattern differences, not just point-in-time comparison
+
+> **Note:** Metric presets replace the need for a separate Trend Analysis View. See ADR-027.
 
 #### 1.5 Quick Insights (Keywords)
 
@@ -103,20 +110,23 @@ The Overview answers "Is my marketing working?" at a glance through a hierarchic
 - [ ] Clear all filters button
 - [ ] Filters accessible via sidebar drawer
 
-### 2. Trend Analysis View
+### 2. Trend Analysis ~~View~~ (Merged into Overview)
 
-#### 2.1 Time Series Charts
+> **Decision:** Trend analysis functionality has been merged into the Overview sparkline via metric presets, eliminating the need for a separate Trends view. See ADR-027.
 
-- [ ] Monthly trend chart for selected metrics
-- [ ] Ability to overlay multiple metrics (e.g., Cost and Sessions)
-- [ ] Visual comparison line for same period previous year (when enabled)
+#### 2.1 Time Series Charts - ✅ Merged into Overview Section 1.4
 
-#### 2.2 Metrics Available for Trending
+- [x] Monthly trend chart for selected metrics → Implemented as Overview sparkline with presets
+- [x] Ability to overlay multiple metrics → Metric preset combinations (e.g., Cost & Sessions)
+- [x] Visual comparison line for same period previous year → Dashed lines when comparison enabled
 
-- [ ] Cost, Clicks, Impressions, CTR, Avg CPC
-- [ ] Sessions, Engaged Sessions, Bounce Rate
-- [ ] Conversions (based on selected events)
-- [ ] Calculated: Cost per Session, Cost per Engaged Session, Cost per Conversion
+#### 2.2 Metrics Available for Trending - ✅ Available via Presets
+
+Available through preset selector:
+- [x] Cost & Clicks (default)
+- [x] Cost & Sessions
+- [x] Sessions & Engaged Sessions
+- [x] Clicks & Impressions
 
 ### 3. Campaign Analysis View
 

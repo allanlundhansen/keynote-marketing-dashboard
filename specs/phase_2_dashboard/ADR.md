@@ -728,3 +728,58 @@ Implementation:
 - Cannot compare arbitrary metrics (e.g., CTR vs Avg CPC)
 - Limited to 4 preset combinations
 - Power users wanting full flexibility must use raw Sheets data
+
+---
+
+## ADR-028: Consolidate Drill-Down Views into Campaign Detail
+
+- **Status**: Accepted
+
+### Context
+
+The original spec separated drill-down views into two places:
+- **Section 7.3** (tasks) / **Section 3** (requirements): "Campaign drill-down with keywords and search terms tabs"
+- **Section 12** (tasks) / **Section 8** (requirements): "Drill-Down Views" with Keywords, Search Terms, Landing Pages as separate routes
+
+This created circular dependencies and didn't reflect actual user flow. You couldn't implement 7.3 without implementing 12.1/12.2, and the separation was artificial.
+
+### Decision
+
+**Consolidate all drill-down functionality into Campaign Detail View** as tabs, not separate routes.
+
+User flow:
+```
+Campaign List (#/campaigns)
+    └── Click row → Campaign Detail (#/campaigns/:id)
+                        ├── Keywords Tab
+                        ├── Search Terms Tab
+                        └── Landing Pages Tab
+```
+
+### Rationale
+
+1. **Reflects actual user journey**: Users don't navigate directly to "Keywords" - they go to a campaign and then explore its keywords.
+
+2. **Eliminates redundancy**: One place in the spec for drill-down views, not two.
+
+3. **Simpler routing**: Fewer routes to maintain. Campaign context is preserved in the URL (`/campaigns/:id`).
+
+4. **Better UX**: Tabs keep user in context. No back-and-forth between separate pages.
+
+### Changes Made
+
+- **tasks.md**: Consolidated Section 12 into Section 7 (Campaign Analysis)
+- **requirements.md**: Consolidated Section 8 into Section 3 (Campaign Analysis)
+- **design.md**: Updated component tree and removed standalone drill-down routes
+
+### Consequences
+
+**Positive:**
+- Clearer spec organization
+- Single source of truth for drill-down implementation
+- Simpler routing
+- Better user experience (tabs vs separate pages)
+
+**Negative:**
+- Can't deep-link directly to Keywords for a campaign (must go through Campaign Detail)
+- Tab state not preserved in URL (could add `?tab=keywords` if needed later)

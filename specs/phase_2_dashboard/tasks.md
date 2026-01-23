@@ -163,21 +163,46 @@
 
 ## 7. Campaign Analysis View
 
-### 7.1 Campaign Table
+> **Reorganized:** Sections 7 and 12 have been consolidated. Campaign drill-down views (Keywords, Search Terms, Landing Pages) are now part of the Campaign Detail View, not a separate section.
+
+### 7.1 Campaign List View
 - [ ] Create sortable DataTable with PrimeVue
 - [ ] Columns: Campaign Name, Type, Cost, Clicks, Impressions, CTR, Sessions, Engaged Sessions, Conversions
 - [ ] Enable sorting by any column
 - [ ] Add pagination (20 rows per page)
-- [ ] Add sparkline for each campaign (mini trend chart)
+- [ ] Click row to navigate to Campaign Detail View
 
-### 7.2 Campaign Comparison
+### 7.2 Campaign Detail View
+- [ ] Route: `#/campaigns/:id`
+- [ ] Display campaign summary metrics at top
+- [ ] Tab navigation: Keywords | Search Terms | Landing Pages
+- [ ] Back button to return to campaign list
+
+### 7.3 Keywords Tab (within Campaign Detail)
+- [ ] Call `getKeywordDetail(campaignId, dateFrom, dateTo)` backend function
+- [ ] Display sortable table with keyword data
+- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC
+- [ ] Show loading state during fetch
+- [ ] Expandable rows showing search terms (from Summary_Keywords)
+
+### 7.4 Search Terms Tab (within Campaign Detail)
+- [ ] Call `getSearchTermDetail(campaignId, dateFrom, dateTo)` backend function
+- [ ] Display sortable table with search term data
+- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
+- [ ] Useful for negative keyword identification
+
+### 7.5 Landing Pages Tab (within Campaign Detail)
+- [ ] Call `getLandingPageDetail(campaign, dateFrom, dateTo)` backend function
+- [ ] Display sortable table with landing page data
+- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Engagement Rate
+- [ ] Helps diagnose page vs targeting issues
+
+### 7.6 Campaign Comparison (Deferred)
 - [ ] Allow selecting 2-3 campaigns for side-by-side comparison
 - [ ] Show percentage of total for each metric
 - [ ] Visual bar comparison
 
-### 7.3 Campaign Drill-Down
-- [ ] Click campaign row to navigate to detail view
-- [ ] Campaign detail view shows keywords and search terms tabs
+> **Note:** Campaign Comparison (7.6) is lower priority. Implement list + detail views first.
 
 ## 8. Device Analysis View
 
@@ -233,30 +258,9 @@
 - [ ] Recalculate "Cost per Conversion" when selection changes
 - [ ] Update all views that display conversion metrics
 
-## 12. Drill-Down Views
+## ~~12. Drill-Down Views~~ (Consolidated into Section 7)
 
-### 12.1 Keyword Detail View
-- [ ] Route: `#/keywords?campaign=X&dateFrom=Y&dateTo=Z`
-- [ ] Call `getKeywordDetail()` backend function
-- [ ] Display sortable table with keyword data
-- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC, Quality Score
-- [ ] Show loading state during fetch
-- [ ] Back button to return to campaign view
-
-### 12.2 Search Term Detail View
-- [ ] Route: `#/search-terms?campaign=X&dateFrom=Y&dateTo=Z`
-- [ ] Call `getSearchTermDetail()` backend function
-- [ ] Display sortable table with search term data
-- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
-- [ ] Useful for negative keyword identification
-- [ ] Back button to return to campaign view
-
-### 12.3 Landing Page Detail View
-- [ ] Route: `#/landing-pages?campaign=X&dateFrom=Y&dateTo=Z`
-- [ ] Call `getLandingPageDetail()` backend function
-- [ ] Display sortable table with landing page data
-- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Bounce Rate
-- [ ] Back button to return to campaign view
+> **Moved:** Keyword, Search Term, and Landing Page drill-down views have been consolidated into Section 7 (Campaign Analysis) as tabs within the Campaign Detail View. This reflects the actual user flow: Campaigns → Campaign Detail → Keywords/Search Terms/Landing Pages.
 
 ## 13. UI States
 

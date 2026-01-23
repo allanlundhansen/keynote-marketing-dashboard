@@ -130,14 +130,44 @@ Available through preset selector:
 
 ### 3. Campaign Analysis View
 
-#### 3.1 Campaign Performance Table
+> **Reorganized:** Drill-down views (Keywords, Search Terms, Landing Pages) are now part of Campaign Analysis as tabs within Campaign Detail View.
+
+#### 3.1 Campaign List
 
 - [ ] Sortable table with all campaigns
 - [ ] Columns: Campaign Name, Type, Cost, Clicks, Impressions, CTR, Sessions, Engaged Sessions, Conversions
-- [ ] Sparkline showing trend for each campaign
-- [ ] Click to drill down to campaign detail
+- [ ] Click row to navigate to Campaign Detail View
 
-#### 3.2 Campaign Comparison
+#### 3.2 Campaign Detail View
+
+- [ ] Route: `#/campaigns/:id`
+- [ ] Campaign summary metrics at top
+- [ ] Tab navigation: Keywords | Search Terms | Landing Pages
+- [ ] Back button to return to campaign list
+
+#### 3.3 Keywords Tab (within Campaign Detail)
+
+- [ ] Shows keyword-level performance for selected campaign/date range
+- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC
+- [ ] Sortable by any column
+- [ ] Expandable rows showing search terms per keyword
+- [ ] Acceptable load time: 2-3 seconds
+
+#### 3.4 Search Terms Tab (within Campaign Detail)
+
+- [ ] Shows actual user queries for selected campaign/date range
+- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
+- [ ] Useful for negative keyword identification
+- [ ] Acceptable load time: 2-3 seconds
+
+#### 3.5 Landing Pages Tab (within Campaign Detail)
+
+- [ ] Shows landing page performance for selected campaign/date range
+- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Engagement Rate
+- [ ] Helps diagnose page vs targeting issues
+- [ ] Acceptable load time: 2-3 seconds
+
+#### 3.6 Campaign Comparison (Deferred)
 
 - [ ] Side-by-side comparison of selected campaigns
 - [ ] Percentage of total spend/clicks/conversions for each campaign
@@ -177,29 +207,9 @@ Available through preset selector:
 - [ ] All conversion-related metrics recalculate when selection changes
 - [ ] Affected metrics: Conversion Count, Cost per Conversion, Conversion Rate
 
-### 8. Drill-Down Views
+### ~~8. Drill-Down Views~~ (Consolidated into Section 3)
 
-#### 8.1 Keyword Detail (from Raw_Ads_Keywords)
-
-- [ ] Accessible from campaign drill-down
-- [ ] Shows keyword-level performance for selected campaign/date range
-- [ ] Columns: Keyword, Match Type, Cost, Clicks, Impressions, CTR, Avg CPC, Quality Score
-- [ ] Sortable by any column
-- [ ] Acceptable load time: 2-3 seconds
-
-#### 8.2 Search Term Detail (from Raw_Ads_SearchTerms)
-
-- [ ] Shows actual user queries for selected campaign/date range
-- [ ] Columns: Search Term, Matched Keyword, Cost, Clicks, Impressions, CTR
-- [ ] Useful for negative keyword identification
-- [ ] Acceptable load time: 2-3 seconds
-
-#### 8.3 Landing Page Detail (from Raw_GA4_Pages)
-
-- [ ] Shows landing page performance for selected campaign/date range
-- [ ] Columns: Landing Page URL, Sessions, Engaged Sessions, Bounce Rate
-- [ ] Helps diagnose "page problem" vs "targeting problem"
-- [ ] Acceptable load time: 2-3 seconds
+> **Moved:** Keyword, Search Term, and Landing Page drill-down views have been consolidated into Section 3 (Campaign Analysis) as tabs within the Campaign Detail View. This reflects the actual user flow: Campaign List → Campaign Detail → Keywords/Search Terms/Landing Pages tabs.
 
 ### 9. UI States
 

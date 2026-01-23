@@ -91,11 +91,11 @@ const routes = [
   { path: '/devices', component: DevicesView, name: 'devices' },
   { path: '/types', component: TypesView, name: 'types' },
   { path: '/countries', component: CountriesView, name: 'countries' },
-  { path: '/conversions', component: ConversionsView, name: 'conversions' },
-  { path: '/keywords', component: KeywordsView, name: 'keywords' },
-  { path: '/search-terms', component: SearchTermsView, name: 'search-terms' },
-  { path: '/landing-pages', component: LandingPagesView, name: 'landing-pages' }
+  { path: '/conversions', component: ConversionsView, name: 'conversions' }
 ];
+
+// Note: Keywords, Search Terms, and Landing Pages are now tabs within
+// CampaignDetailView, not separate routes. Access via #/campaigns/:id
 
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
@@ -109,11 +109,11 @@ const router = VueRouter.createRouter({
 |-----|------|-------------|
 | `#/overview` | Overview | Dashboard home with summary cards, funnel, trend chart |
 | `#/campaigns` | Campaigns | Campaign list table |
-| `#/campaigns/123` | Campaign Detail | Single campaign with drill-down |
+| `#/campaigns/123` | Campaign Detail | Campaign metrics + tabs for Keywords, Search Terms, Landing Pages |
 | `#/devices` | Devices | Device breakdown |
+| `#/types` | Types | Campaign type breakdown |
 | `#/countries` | Countries | Geographic analysis |
 | `#/conversions` | Conversions | Event selection and conversion metrics |
-| `#/keywords?campaign=123` | Keywords | Keyword drill-down filtered by campaign |
 
 ### Query Parameters for Filters
 
@@ -309,9 +309,16 @@ App (root)
     │   └── TrendChart (Chart.js)
     ├── CampaignsView
     │   └── CampaignTable (PrimeVue DataTable)
-    ├── CampaignDetailView
-    │   ├── CampaignSummary
-    │   └── DrillDownTabs (Keywords, SearchTerms, LandingPages)
+    ├── CampaignDetailView (#/campaigns/:id)
+    │   ├── CampaignSummary (metrics header)
+    │   ├── BackButton
+    │   └── TabView (PrimeVue Tabs)
+    │       ├── KeywordsTab
+    │       │   └── KeywordTable (PrimeVue DataTable, expandable rows)
+    │       ├── SearchTermsTab
+    │       │   └── SearchTermTable (PrimeVue DataTable)
+    │       └── LandingPagesTab
+    │           └── LandingPageTable (PrimeVue DataTable)
     ├── DevicesView
     │   ├── DeviceChart (PrimeVue Chart - doughnut)
     │   └── DeviceTable (PrimeVue DataTable)
@@ -320,15 +327,9 @@ App (root)
     │   └── TypeTable
     ├── CountriesView
     │   └── CountryTable (PrimeVue DataTable)
-    ├── ConversionsView
-    │   ├── EventSelector (PrimeVue MultiSelect)
-    │   └── ConversionMetrics
-    ├── KeywordsView (drill-down)
-    │   └── KeywordTable (PrimeVue DataTable)
-    ├── SearchTermsView (drill-down)
-    │   └── SearchTermTable
-    └── LandingPagesView (drill-down)
-        └── LandingPageTable
+    └── ConversionsView
+        ├── EventSelector (PrimeVue MultiSelect)
+        └── ConversionMetrics
 ```
 
 ### File Structure
